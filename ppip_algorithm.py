@@ -42,6 +42,7 @@ from qgis.core import (QgsProcessing,
                        QgsProcessingAlgorithm,
                        QgsProcessingParameterFeatureSource,
                        QgsProcessingParameterFeatureSink,
+                       QgsProcessingParameterDistance,
                        QgsField,
                        QgsCoordinateReferenceSystem,
                        QgsReferencedRectangle,
@@ -73,6 +74,7 @@ class PutPointsInPolygonsAlgorithm(QgsProcessingAlgorithm):
 
     OUTPUT = 'OUTPUT'
     INPUT = 'INPUT'
+    DISTANCE = 'DISTANCE'
 
     def initAlgorithm(self, config):
         """
@@ -100,6 +102,14 @@ class PutPointsInPolygonsAlgorithm(QgsProcessingAlgorithm):
             )
         )
 
+        self.addParameter(
+            QgsProcessingParameterDistance(
+                self.DISTANCE,
+                self.tr('Distance between points'),
+                500,
+                )
+        )
+
     def processAlgorithm(self, parameters, context, feedback):
         """
         Here is where the processing itself takes place.
@@ -109,6 +119,8 @@ class PutPointsInPolygonsAlgorithm(QgsProcessingAlgorithm):
         # to uniquely identify the feature sink, and must be included in the
         # dictionary returned by the processAlgorithm function.
         source = self.parameterAsSource(parameters, self.INPUT, context)
+
+        SPACING = self.parameterAsInt(parameters, self.DISTANCE, context)
         
         your_fields = QgsFields()
         your_fields.append(QgsField('fid', QVariant.Int))
@@ -156,7 +168,7 @@ class PutPointsInPolygonsAlgorithm(QgsProcessingAlgorithm):
                         'INSET':0,
                         'RANDOMIZE':False,
                         'IS_SPACING':True,
-                        'CRS':QgsCoordinateReferenceSystem('EPSG:3857'),
+                        'CRS':QgsCoordinateReferenceSystem(f'EPSG:{crs.authid}'),
                         'OUTPUT':'TEMPORARY_OUTPUT'
                             })["OUTPUT"]
             
