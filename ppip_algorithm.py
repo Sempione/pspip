@@ -27,16 +27,30 @@ __author__ = 'Christian Lesem'
 __date__ = '2024-08-09'
 __copyright__ = '(C) 2024 by Christian Lesem'
 
+SPACING = 500
+
 # This will get replaced with a git SHA1 when you do a git archive
 
 __revision__ = '$Format:%H$'
 
-from qgis.PyQt.QtCore import QCoreApplication
+from qgis import processing
+
+from qgis.PyQt.QtCore import (QCoreApplication,
+                              QVariant)
 from qgis.core import (QgsProcessing,
                        QgsFeatureSink,
                        QgsProcessingAlgorithm,
                        QgsProcessingParameterFeatureSource,
-                       QgsProcessingParameterFeatureSink)
+                       QgsProcessingParameterFeatureSink,
+                       QgsField,
+                       QgsCoordinateReferenceSystem,
+                       QgsReferencedRectangle,
+                       QgsFeatureRequest,
+                       QgsFeature,
+                       QgsFields,
+                       QgsWkbTypes,
+                       QgsVectorLayer)
+
 
 
 class PutPointsInPolygonsAlgorithm(QgsProcessingAlgorithm):
@@ -95,24 +109,105 @@ class PutPointsInPolygonsAlgorithm(QgsProcessingAlgorithm):
         # to uniquely identify the feature sink, and must be included in the
         # dictionary returned by the processAlgorithm function.
         source = self.parameterAsSource(parameters, self.INPUT, context)
-        (sink, dest_id) = self.parameterAsSink(parameters, self.OUTPUT,
-                context, source.fields(), source.wkbType(), source.sourceCrs())
+        
+        your_fields = QgsFields()
+        your_fields.append(QgsField('fid', QVariant.Int))
+        your_fields.append(QgsField('NUMPOINTS', QVariant.Int))
 
+        (sink, dest_id) = self.parameterAsSink(parameters, self.OUTPUT,
+                context, your_fields, QgsWkbTypes.MultiPoint, source.sourceCrs())
+        
         # Compute the number of steps to display within the progress bar and
         # get features from source
         total = 100.0 / source.featureCount() if source.featureCount() else 0
         features = source.getFeatures()
 
+
+
+
+        crs = source.sourceCrs()
+
+
+        #### the central piece of the script: 
+        # iterate over each feature of the input polygon layer and calculate the best
+        # arrangement of points
         for current, feature in enumerate(features):
             # Stop the algorithm if cancel button has been clicked
             if feedback.isCanceled():
                 break
 
+            f_id = feature.id()
+
+            # select the feature that is currently iterated upon
+            # source.selectByExpression(f'"fid"=\'{f_id}\'')
+            
+            # create point grid for the current feature
+            # TODO: create alternating grids, shift grid and rotate grid gradually
+            # to ensure the grid fills the polygon even when shifted or rotated,
+            # its size has to exceed the bounding box by at least one time the SPACING 
+            # value and it should be a circle
+            bb = feature.geometry().boundingBox()
+            crs_bb = (QgsCoordinateReferenceSystem(int(crs.authid().split(":")[1]), QgsCoordinateReferenceSystem.EpsgCrsId))
+            referenced_bb = QgsReferencedRectangle(bb, crs_bb)
+            points_lyr = processing.run(
+                    "qgis:regularpoints", {
+                        'EXTENT': referenced_bb,
+                        'SPACING':SPACING,
+                        'INSET':0,
+                        'RANDOMIZE':False,
+                        'IS_SPACING':True,
+                        'CRS':QgsCoordinateReferenceSystem('EPSG:3857'),
+                        'OUTPUT':'TEMPORARY_OUTPUT'
+                            })["OUTPUT"]
+            
+            source_lyr = source.materialize(QgsFeatureRequest())
+            source_lyr.selectByExpression(f'"fid"=\'{f_id}\'')
+
+            results_lyr = QgsVectorLayer(f'Polygon?crs={crs.authid()}', f'{source.sourceName()}_temp1', 'memory')
+            new_feature = QgsFeature()
+            new_feature.setGeometry(feature.geometry())
+            pr = results_lyr.dataProvider()
+            pr.addFeatures([new_feature])
+            
+            points_clipped_lyr = processing.run(
+                    "native:clip", {
+                        'INPUT' : points_lyr,
+                        'OUTPUT' : 'TEMPORARY_OUTPUT',
+                        'OVERLAY' : results_lyr
+                    })["OUTPUT"]
+            
+            counter_lyr = processing.run("native:countpointsinpolygon", {
+                        'POLYGONS': results_lyr,
+                        'POINTS':points_clipped_lyr,
+                        'WEIGHT':'',
+                        'CLASSFIELD':'',
+                        'FIELD':'NUMPOINTS',
+                        'OUTPUT':'TEMPORARY_OUTPUT'})["OUTPUT"]
+                        
+            numpoints = int(counter_lyr.getFeature(1)["NUMPOINTS"])
+            print(f"{f_id}: {numpoints}, total nr. of features: {counter_lyr.featureCount()}")
+
+            
+            new_feature = QgsFeature()
+
+            multipart_points_lyr = processing.run(
+                "native:collect", {
+                    'INPUT':points_clipped_lyr,
+                    'FIELD':[],
+                    'OUTPUT':'TEMPORARY_OUTPUT'
+                    })["OUTPUT"]
+                    
+            geom = multipart_points_lyr.getFeature(1).geometry()
+            new_feature.setGeometry(geom)
+            new_feature.setAttributes([f_id, numpoints])
+            
+
             # Add a feature in the sink
-            sink.addFeature(feature, QgsFeatureSink.FastInsert)
+            sink.addFeature(new_feature, QgsFeatureSink.FastInsert)
 
             # Update the progress bar
             feedback.setProgress(int(current * total))
+
 
         # Return the results of the algorithm. In this case our only result is
         # the feature sink which contains the processed features, but some
