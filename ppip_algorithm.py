@@ -47,9 +47,14 @@ from qgis.core import (QgsProcessing,
                        QgsFeature,
                        QgsFields,
                        QgsWkbTypes,
-                       QgsVectorLayer)
+                       QgsVectorLayer,
+                       QgsGeometry)
 
 from math import sqrt
+
+ROT_ITERATIONS = 20
+X_ITERATIONS = 20
+Y_ITERATIONS = 20
 
 class PutPointsInPolygonsAlgorithm(QgsProcessingAlgorithm):
     """
@@ -163,7 +168,6 @@ class PutPointsInPolygonsAlgorithm(QgsProcessingAlgorithm):
 
             # Create (rectangular) point grid within current feature's bounding box.
             f_bb = feature.geometry().boundingBox() # QgsRectangle object
-            print(f_bb)
 
                 # Make the bounding box a square
             if (w := f_bb.width()) > (h := f_bb.height()):
@@ -182,9 +186,11 @@ class PutPointsInPolygonsAlgorithm(QgsProcessingAlgorithm):
                      f_bb.yMinimum() - account_for_virtual_circle - SPACING,
                      f_bb.xMaximum() + account_for_virtual_circle + SPACING,
                      f_bb.yMaximum() + account_for_virtual_circle + SPACING)
-            print(f_bb)
+
+            bb_centroid = f_bb.center()
+
             bb_for_grid_creation = QgsReferencedRectangle(f_bb, crs_obj)
-            points_lyr = processing.runAndLoadResults(
+            points_lyr = processing.run(
                     "qgis:regularpoints", {
                         'EXTENT': bb_for_grid_creation,
                         'SPACING':SPACING,
@@ -195,39 +201,80 @@ class PutPointsInPolygonsAlgorithm(QgsProcessingAlgorithm):
                         'OUTPUT':'TEMPORARY_OUTPUT'
                             })["OUTPUT"]
             
-            # Clip the points lyr with the feature layer as the overlay.
-            points_clipped_lyr = processing.run(
-                    "native:clip", {
-                        'INPUT' : points_lyr,
-                        'OUTPUT' : 'TEMPORARY_OUTPUT',
-                        'OVERLAY' : lyr_with_current_feature_only
-                    })["OUTPUT"]
-            
-            # Count the points within the polygon.
-            counter_lyr = processing.run("native:countpointsinpolygon", {
-                        'POLYGONS': lyr_with_current_feature_only,
-                        'POINTS':points_clipped_lyr,
-                        'WEIGHT':'',
-                        'CLASSFIELD':'',
-                        'FIELD':'NUMPOINTS',
-                        'OUTPUT':'TEMPORARY_OUTPUT'})["OUTPUT"]
+            best_constellation = {"layer": None, "NUMPOINTS": 0}
 
-            # Retrieve the number of points from the only feature in the counter layer.            
-            numpoints = int(counter_lyr.getFeature(1)["NUMPOINTS"])
+            for degrees in range(0, 91, int(90 / ROT_ITERATIONS)):
+                points_lyr_rotated = processing.run(
+                    "native:rotatefeatures", {
+                        'INPUT':points_lyr,
+                        'ANGLE':degrees,
+                        'ANCHOR': f"{bb_centroid.x()}, {bb_centroid.y()} [EPSG:{crs_epsg}]",
+                        # 'ANCHOR':bb_centroid,
+                        'OUTPUT':'TEMPORARY_OUTPUT'
+                            })["OUTPUT"]
+                
+                for x_translate_dist in range(0, SPACING, int(SPACING / X_ITERATIONS)):
+                    points_lyr_x_shifted = processing.run("native:translategeometry", {
+                        'INPUT':points_lyr_rotated,
+                        'DELTA_X':x_translate_dist,
+                        'DELTA_Y':0,
+                        'DELTA_Z':0,
+                        'DELTA_M':0,
+                        'OUTPUT':'TEMPORARY_OUTPUT'
+                            })["OUTPUT"]
+                    
+                    for y_translate_dist in range(0, SPACING, int(SPACING / Y_ITERATIONS)):
+                        points_lyr_y_shifted = processing.run("native:translategeometry", {
+                        'INPUT':points_lyr_x_shifted,
+                        'DELTA_X':0,
+                        'DELTA_Y':y_translate_dist,
+                        'DELTA_Z':0,
+                        'DELTA_M':0,
+                        'OUTPUT':'TEMPORARY_OUTPUT'
+                            })["OUTPUT"]
+                        
+                        # Clip the points lyr with the feature layer as the overlay.
+                        points_clipped_lyr = processing.run(
+                                "native:clip", {
+                                    'INPUT' : points_lyr_y_shifted,
+                                    'OUTPUT' : 'TEMPORARY_OUTPUT',
+                                    'OVERLAY' : lyr_with_current_feature_only
+                                })["OUTPUT"]
+                        
+                        # Count the points within the polygon.
+                        counter_lyr = processing.run("native:countpointsinpolygon", {
+                                    'POLYGONS': lyr_with_current_feature_only,
+                                    'POINTS':points_clipped_lyr,
+                                    'WEIGHT':'',
+                                    'CLASSFIELD':'',
+                                    'FIELD':'NUMPOINTS',
+                                    'OUTPUT':'TEMPORARY_OUTPUT'})["OUTPUT"]
 
-            # Make MultiPoint from the single points.
-            multipart_points_lyr = processing.run(
-                "native:collect", {
-                    'INPUT':points_clipped_lyr,
-                    'FIELD':[],
-                    'OUTPUT':'TEMPORARY_OUTPUT'
-                    })["OUTPUT"]
+                        # Retrieve the number of points from the only feature in the counter layer.            
+                        numpoints = int(counter_lyr.getFeature(1)["NUMPOINTS"])
+
+                        # Make MultiPoint from the single points.
+                        multipart_points_lyr = processing.run(
+                            "native:collect", {
+                                'INPUT':points_clipped_lyr,
+                                'FIELD':[],
+                                'OUTPUT':'TEMPORARY_OUTPUT'
+                                })["OUTPUT"]
+                        
+                        if numpoints > best_constellation['NUMPOINTS']:
+                            layer_cloned = multipart_points_lyr.clone()
+                            best_constellation["layer"] = layer_cloned
+                            best_constellation["NUMPOINTS"] = numpoints
             
             # Create and fill the feature that is to be added to the sink.
-            feature_obj_2 = QgsFeature()        
-            geom = multipart_points_lyr.getFeature(1).geometry()
+            feature_obj_2 = QgsFeature()  
+            if lyr := best_constellation["layer"]:     
+                geom = lyr.getFeature(1).geometry()
+            else:
+                geom = QgsGeometry() # create empty geometry
+            
             feature_obj_2.setGeometry(geom)
-            feature_obj_2.setAttributes([f_id, numpoints])
+            feature_obj_2.setAttributes([f_id, best_constellation["NUMPOINTS"]])
         
             # Add the feature in the sink.
             sink.addFeature(feature_obj_2, QgsFeatureSink.FastInsert)
