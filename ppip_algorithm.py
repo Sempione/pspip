@@ -49,6 +49,8 @@ from qgis.core import (QgsProcessing,
                        QgsWkbTypes,
                        QgsVectorLayer)
 
+from math import sqrt
+
 class PutPointsInPolygonsAlgorithm(QgsProcessingAlgorithm):
     """
     All Processing algorithms should extend the QgsProcessingAlgorithm
@@ -160,11 +162,31 @@ class PutPointsInPolygonsAlgorithm(QgsProcessingAlgorithm):
             pr.addFeatures([feature_obj_1])
 
             # Create (rectangular) point grid within current feature's bounding box.
-            f_bb = feature.geometry().boundingBox()
-            referenced_bb = QgsReferencedRectangle(f_bb, crs_obj)
-            points_lyr = processing.run(
+            f_bb = feature.geometry().boundingBox() # QgsRectangle object
+            print(f_bb)
+
+                # Make the bounding box a square
+            if (w := f_bb.width()) > (h := f_bb.height()):
+                diff_side = (w - h) / 2
+                f_bb.setYMinimum(f_bb.yMinimum() - diff_side)
+                f_bb.setYMaximum(f_bb.yMaximum() + diff_side)
+            elif (w := f_bb.width()) < (h := f_bb.height()):
+                diff_side = (w - h) / 2
+                f_bb.setXMinimum(f_bb.xMinimum() - diff_side)
+                f_bb.setXMaximum(f_bb.xMaximum() + diff_side)
+
+                # Add an additional padding of length "SPACING" in each direction 
+            account_for_virtual_circle = (f_bb.width() * sqrt(2) - f_bb.width())  / 2
+            
+            f_bb.set(f_bb.xMinimum() - account_for_virtual_circle - SPACING,
+                     f_bb.yMinimum() - account_for_virtual_circle - SPACING,
+                     f_bb.xMaximum() + account_for_virtual_circle + SPACING,
+                     f_bb.yMaximum() + account_for_virtual_circle + SPACING)
+            print(f_bb)
+            bb_for_grid_creation = QgsReferencedRectangle(f_bb, crs_obj)
+            points_lyr = processing.runAndLoadResults(
                     "qgis:regularpoints", {
-                        'EXTENT': referenced_bb,
+                        'EXTENT': bb_for_grid_creation,
                         'SPACING':SPACING,
                         'INSET':0,
                         'RANDOMIZE':False,
