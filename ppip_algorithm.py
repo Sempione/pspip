@@ -41,6 +41,7 @@ from qgis.core import (QgsProcessing,
                        QgsProcessingParameterFeatureSource,
                        QgsProcessingParameterFeatureSink,
                        QgsProcessingParameterDistance,
+                       QgsProcessingParameterNumber,
                        QgsField,
                        QgsCoordinateReferenceSystem,
                        QgsReferencedRectangle,
@@ -51,10 +52,6 @@ from qgis.core import (QgsProcessing,
                        QgsGeometry)
 
 from math import sqrt
-
-ROT_ITERATIONS = 20
-X_ITERATIONS = 20
-Y_ITERATIONS = 20
 
 class PutPointsInPolygonsAlgorithm(QgsProcessingAlgorithm):
     """
@@ -69,6 +66,9 @@ class PutPointsInPolygonsAlgorithm(QgsProcessingAlgorithm):
     OUTPUT = 'OUTPUT'
     INPUT = 'INPUT'
     DISTANCE = 'DISTANCE'
+    ITER_X = 'ITER_X'
+    ITER_Y = 'ITER_Y'
+    ITER_ROT = 'ITER_ROT'
 
     def initAlgorithm(self, config):
         """
@@ -105,6 +105,39 @@ class PutPointsInPolygonsAlgorithm(QgsProcessingAlgorithm):
                 )
         )
 
+        self.addParameter(
+            QgsProcessingParameterNumber(
+                self.ITER_X,
+                description=self.tr('Number of iterations (x-direction)'),
+                defaultValue=1,
+                type=QgsProcessingParameterNumber.Integer,
+                minValue=1,
+                maxValue=100
+            )
+        )
+
+        self.addParameter(
+            QgsProcessingParameterNumber(
+                self.ITER_Y,
+                description=self.tr('Number of iterations (y-direction)'),
+                defaultValue=1,
+                type=QgsProcessingParameterNumber.Integer,
+                minValue=1,
+                maxValue=100
+            )
+        )
+
+        self.addParameter(
+            QgsProcessingParameterNumber(
+                self.ITER_ROT,
+                description=self.tr('Number of iterations (rotation)'),
+                defaultValue=1,
+                type=QgsProcessingParameterNumber.Integer,
+                minValue=1,
+                maxValue=100
+            )
+        )
+
     def processAlgorithm(self, parameters, context, feedback):
         """
         Here is where the processing itself takes place.
@@ -117,6 +150,10 @@ class PutPointsInPolygonsAlgorithm(QgsProcessingAlgorithm):
 
         # Retrieve the distance parameter
         SPACING = self.parameterAsInt(parameters, self.DISTANCE, context)
+
+        ROT_ITERATIONS = self.parameterAsInt(parameters, self.ITER_X, context)
+        X_ITERATIONS = self.parameterAsInt(parameters, self.ITER_Y, context)
+        Y_ITERATIONS = self.parameterAsInt(parameters, self.ITER_ROT, context)
         
         # Prepare fields that are to be added to the sink (the output layer).
         sink_fields = QgsFields()
