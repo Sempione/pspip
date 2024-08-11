@@ -109,7 +109,7 @@ class PutPointsInPolygonsAlgorithm(QgsProcessingAlgorithm):
             QgsProcessingParameterNumber(
                 self.ITER_X,
                 description=self.tr('Number of iterations (x-direction)'),
-                defaultValue=1,
+                defaultValue=5,
                 type=QgsProcessingParameterNumber.Integer,
                 minValue=1,
                 maxValue=100
@@ -120,7 +120,7 @@ class PutPointsInPolygonsAlgorithm(QgsProcessingAlgorithm):
             QgsProcessingParameterNumber(
                 self.ITER_Y,
                 description=self.tr('Number of iterations (y-direction)'),
-                defaultValue=1,
+                defaultValue=5,
                 type=QgsProcessingParameterNumber.Integer,
                 minValue=1,
                 maxValue=100
@@ -131,7 +131,7 @@ class PutPointsInPolygonsAlgorithm(QgsProcessingAlgorithm):
             QgsProcessingParameterNumber(
                 self.ITER_ROT,
                 description=self.tr('Number of iterations (rotation)'),
-                defaultValue=1,
+                defaultValue=5,
                 type=QgsProcessingParameterNumber.Integer,
                 minValue=1,
                 maxValue=100
