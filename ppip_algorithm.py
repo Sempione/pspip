@@ -189,6 +189,7 @@ class PutPointsInPolygonsAlgorithm(QgsProcessingAlgorithm):
         # + Write the feature's fid, geometry (the above MultiPoint geometry) and the point count ("NUMPOINTS")
         #   into the feature sink.
 
+        total_iterations = 0
         for current, feature in enumerate(features):
             # Stop the algorithm if cancel button has been clicked.
             if feedback.isCanceled():
@@ -302,6 +303,9 @@ class PutPointsInPolygonsAlgorithm(QgsProcessingAlgorithm):
                             layer_cloned = multipart_points_lyr.clone()
                             best_constellation["layer"] = layer_cloned
                             best_constellation["NUMPOINTS"] = numpoints
+
+            # Update the progress bar.
+            feedback.setProgress(int(current * total))            
             
             # Create and fill the feature that is to be added to the sink.
             feature_obj_2 = QgsFeature()  
@@ -315,9 +319,6 @@ class PutPointsInPolygonsAlgorithm(QgsProcessingAlgorithm):
         
             # Add the feature in the sink.
             sink.addFeature(feature_obj_2, QgsFeatureSink.FastInsert)
-
-            # Update the progress bar.
-            feedback.setProgress(int(current * total))
 
         # TODO: create alternating grids, shift grid and rotate grid gradually
         # to ensure the grid fills the polygon even when shifted or rotated,
