@@ -374,3 +374,6 @@ class PutPointsInPolygonsAlgorithm(QgsProcessingAlgorithm):
 
     def createInstance(self):
         return PutPointsInPolygonsAlgorithm()
+    
+    # def flags(self):
+    #     return super().flags() | QgsProcessingAlgorithm.FlagNoThreading
