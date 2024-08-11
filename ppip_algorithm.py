@@ -94,6 +94,7 @@ class PutPointsInPolygonsAlgorithm(QgsProcessingAlgorithm):
                 self.DISTANCE,
                 self.tr('Distance between points'),
                 500,
+                self.INPUT
                 )
         )
 
