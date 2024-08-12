@@ -242,100 +242,107 @@ class PutPointsInPolygonsAlgorithm(QgsProcessingAlgorithm):
             bb_centroid = f_bb.center()
 
             bb_for_grid_creation = QgsReferencedRectangle(f_bb, crs_obj)
-            print(type(bb_for_grid_creation))
+
+            grids = []
             
-            points_lyr_square = processing.run(
-                "native:creategrid", {
-                    'TYPE':0,
-                    'EXTENT':bb_for_grid_creation,
-                    'HSPACING':SPACING,
-                    'VSPACING':SPACING,
-                    'HOVERLAY':1,
-                    'VOVERLAY':1,
-                    'CRS':QgsCoordinateReferenceSystem('EPSG:25833'),
-                    'OUTPUT':'TEMPORARY_OUTPUT'})["OUTPUT"]
+            if GRID_TYPE == 1 or GRID_TYPE == 2:
+                points_lyr_square = processing.run(
+                    "native:creategrid", {
+                        'TYPE':0,
+                        'EXTENT':bb_for_grid_creation,
+                        'HSPACING':SPACING,
+                        'VSPACING':SPACING,
+                        'HOVERLAY':1,
+                        'VOVERLAY':1,
+                        'CRS':QgsCoordinateReferenceSystem(crs_obj),
+                        'OUTPUT':'TEMPORARY_OUTPUT'})["OUTPUT"]
+                grids.append(points_lyr_square)
             
-            polygon_lyr_triang = processing.run(
-                "native:creategrid", {
-                    'TYPE':4,
-                    'EXTENT':bb_for_grid_creation,
-                    'HSPACING':SPACING,
-                    'VSPACING':SPACING,
-                    'HOVERLAY':1,
-                    'VOVERLAY':1,
-                    'CRS':QgsCoordinateReferenceSystem('EPSG:25833'),
-                    'OUTPUT':'TEMPORARY_OUTPUT'})["OUTPUT"]
-            
-            points_lyr_triang = processing.run(
-                "native:centroids", {
-                    'INPUT':polygon_lyr_triang,
-                    'ALL_PARTS':True,
-                    'OUTPUT':'TEMPORARY_OUTPUT'})["OUTPUT"]
+            if GRID_TYPE == 0 or GRID_TYPE == 2:
+                polygon_lyr_triang = processing.run(
+                    "native:creategrid", {
+                        'TYPE':4,
+                        'EXTENT':bb_for_grid_creation,
+                        'HSPACING':SPACING,
+                        'VSPACING':SPACING,
+                        'HOVERLAY':1,
+                        'VOVERLAY':1,
+                        'CRS':QgsCoordinateReferenceSystem(crs_obj),
+                        'OUTPUT':'TEMPORARY_OUTPUT'})["OUTPUT"]
+                
+                points_lyr_triang = processing.run(
+                    "native:centroids", {
+                        'INPUT':polygon_lyr_triang,
+                        'ALL_PARTS':True,
+                        'OUTPUT':'TEMPORARY_OUTPUT'})["OUTPUT"]
+                
+                grids.append(points_lyr_triang)
             
             best_constellation = {"layer": None, "NUMPOINTS": 0}
 
-            for degrees in range(0, 91, int(90 / ROT_ITERATIONS)):
-                points_lyr_rotated = processing.run(
-                    "native:rotatefeatures", {
-                        'INPUT':points_lyr_triang,
-                        'ANGLE':degrees,
-                        'ANCHOR': f"{bb_centroid.x()}, {bb_centroid.y()} [EPSG:{crs_epsg}]",
-                        # 'ANCHOR':bb_centroid,
-                        'OUTPUT':'TEMPORARY_OUTPUT'
-                            })["OUTPUT"]
-                
-                for x_translate_dist in range(0, SPACING, int(SPACING / X_ITERATIONS)):
-                    points_lyr_x_shifted = processing.run("native:translategeometry", {
-                        'INPUT':points_lyr_rotated,
-                        'DELTA_X':x_translate_dist,
-                        'DELTA_Y':0,
-                        'DELTA_Z':0,
-                        'DELTA_M':0,
-                        'OUTPUT':'TEMPORARY_OUTPUT'
-                            })["OUTPUT"]
+            for grid in grids:    
+                for degrees in range(0, 91, int(90 / ROT_ITERATIONS)):
+                    points_lyr_rotated = processing.run(
+                        "native:rotatefeatures", {
+                            'INPUT':grid,
+                            'ANGLE':degrees,
+                            'ANCHOR': f"{bb_centroid.x()}, {bb_centroid.y()} [EPSG:{crs_epsg}]",
+                            # 'ANCHOR':bb_centroid,
+                            'OUTPUT':'TEMPORARY_OUTPUT'
+                                })["OUTPUT"]
                     
-                    for y_translate_dist in range(0, SPACING, int(SPACING / Y_ITERATIONS)):
-                        points_lyr_y_shifted = processing.run("native:translategeometry", {
-                        'INPUT':points_lyr_x_shifted,
-                        'DELTA_X':0,
-                        'DELTA_Y':y_translate_dist,
-                        'DELTA_Z':0,
-                        'DELTA_M':0,
-                        'OUTPUT':'TEMPORARY_OUTPUT'
-                            })["OUTPUT"]
-                        
-                        # Clip the points lyr with the feature layer as the overlay.
-                        points_clipped_lyr = processing.run(
-                                "native:clip", {
-                                    'INPUT' : points_lyr_y_shifted,
-                                    'OUTPUT' : 'TEMPORARY_OUTPUT',
-                                    'OVERLAY' : lyr_with_current_feature_only
+                    for x_translate_dist in range(0, SPACING, int(SPACING / X_ITERATIONS)):
+                        points_lyr_x_shifted = processing.run("native:translategeometry", {
+                            'INPUT':points_lyr_rotated,
+                            'DELTA_X':x_translate_dist,
+                            'DELTA_Y':0,
+                            'DELTA_Z':0,
+                            'DELTA_M':0,
+                            'OUTPUT':'TEMPORARY_OUTPUT'
                                 })["OUTPUT"]
                         
-                        # Count the points within the polygon.
-                        counter_lyr = processing.run("native:countpointsinpolygon", {
-                                    'POLYGONS': lyr_with_current_feature_only,
-                                    'POINTS':points_clipped_lyr,
-                                    'WEIGHT':'',
-                                    'CLASSFIELD':'',
-                                    'FIELD':'NUMPOINTS',
-                                    'OUTPUT':'TEMPORARY_OUTPUT'})["OUTPUT"]
-
-                        # Retrieve the number of points from the only feature in the counter layer.            
-                        numpoints = int(counter_lyr.getFeature(1)["NUMPOINTS"])
-
-                        # Make MultiPoint from the single points.
-                        multipart_points_lyr = processing.run(
-                            "native:collect", {
-                                'INPUT':points_clipped_lyr,
-                                'FIELD':[],
-                                'OUTPUT':'TEMPORARY_OUTPUT'
+                        for y_translate_dist in range(0, SPACING, int(SPACING / Y_ITERATIONS)):
+                            points_lyr_y_shifted = processing.run("native:translategeometry", {
+                            'INPUT':points_lyr_x_shifted,
+                            'DELTA_X':0,
+                            'DELTA_Y':y_translate_dist,
+                            'DELTA_Z':0,
+                            'DELTA_M':0,
+                            'OUTPUT':'TEMPORARY_OUTPUT'
                                 })["OUTPUT"]
-                        
-                        if numpoints > best_constellation['NUMPOINTS']:
-                            layer_cloned = multipart_points_lyr.clone()
-                            best_constellation["layer"] = layer_cloned
-                            best_constellation["NUMPOINTS"] = numpoints
+                            
+                            # Clip the points lyr with the feature layer as the overlay.
+                            points_clipped_lyr = processing.run(
+                                    "native:clip", {
+                                        'INPUT' : points_lyr_y_shifted,
+                                        'OUTPUT' : 'TEMPORARY_OUTPUT',
+                                        'OVERLAY' : lyr_with_current_feature_only
+                                    })["OUTPUT"]
+                            
+                            # Count the points within the polygon.
+                            counter_lyr = processing.run("native:countpointsinpolygon", {
+                                        'POLYGONS': lyr_with_current_feature_only,
+                                        'POINTS':points_clipped_lyr,
+                                        'WEIGHT':'',
+                                        'CLASSFIELD':'',
+                                        'FIELD':'NUMPOINTS',
+                                        'OUTPUT':'TEMPORARY_OUTPUT'})["OUTPUT"]
+
+                            # Retrieve the number of points from the only feature in the counter layer.            
+                            numpoints = int(counter_lyr.getFeature(1)["NUMPOINTS"])
+
+                            # Make MultiPoint from the single points.
+                            multipart_points_lyr = processing.run(
+                                "native:collect", {
+                                    'INPUT':points_clipped_lyr,
+                                    'FIELD':[],
+                                    'OUTPUT':'TEMPORARY_OUTPUT'
+                                    })["OUTPUT"]
+                            
+                            if numpoints > best_constellation['NUMPOINTS']:
+                                layer_cloned = multipart_points_lyr.clone()
+                                best_constellation["layer"] = layer_cloned
+                                best_constellation["NUMPOINTS"] = numpoints
 
             # Update the progress bar.
             feedback.setProgress(int(current * total))            
