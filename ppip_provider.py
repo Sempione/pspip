@@ -73,7 +73,7 @@ class PutPointsInPolygonsProvider(QgsProcessingProvider):
 
         This string should be short (e.g. "Lastools") and localised.
         """
-        return self.tr('User-defined vector tools')
+        return self.tr('Vector analysis')
 
     def icon(self):
         """

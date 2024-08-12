@@ -382,14 +382,14 @@ class PutPointsInPolygonsAlgorithm(QgsProcessingAlgorithm):
         lowercase alphanumeric characters only and no spaces or other
         formatting characters.
         """
-        return 'Put points in polygons'
+        return 'putpointsinpolygons'
 
     def displayName(self):
         """
         Returns the translated algorithm name, which should be used for any
         user-visible display of the algorithm name.
         """
-        return self.tr(self.name())
+        return self.tr("Put points in polygons")
     
     def shortHelpString(self):
         """
@@ -414,7 +414,7 @@ class PutPointsInPolygonsAlgorithm(QgsProcessingAlgorithm):
         contain lowercase alphanumeric characters only and no spaces or other
         formatting characters.
         """
-        return 'Vector analysis'
+        return ''
 
     def tr(self, string):
         return QCoreApplication.translate('Processing', string)
