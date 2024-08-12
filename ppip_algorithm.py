@@ -242,16 +242,18 @@ class PutPointsInPolygonsAlgorithm(QgsProcessingAlgorithm):
             bb_centroid = f_bb.center()
 
             bb_for_grid_creation = QgsReferencedRectangle(f_bb, crs_obj)
+            print(type(bb_for_grid_creation))
+            
             points_lyr = processing.run(
-                    "qgis:regularpoints", {
-                        'EXTENT': bb_for_grid_creation,
-                        'SPACING':SPACING,
-                        'INSET':0,
-                        'RANDOMIZE':False,
-                        'IS_SPACING':True,
-                        'CRS':QgsCoordinateReferenceSystem(f'EPSG:{crs_epsg}'),
-                        'OUTPUT':'TEMPORARY_OUTPUT'
-                            })["OUTPUT"]
+                "native:creategrid", {
+                    'TYPE':0,
+                    'EXTENT':bb_for_grid_creation,
+                    'HSPACING':SPACING,
+                    'VSPACING':SPACING,
+                    'HOVERLAY':1,
+                    'VOVERLAY':1,
+                    'CRS':QgsCoordinateReferenceSystem('EPSG:25833'),
+                    'OUTPUT':'TEMPORARY_OUTPUT'})["OUTPUT"]
             
             best_constellation = {"layer": None, "NUMPOINTS": 0}
 
