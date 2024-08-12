@@ -245,19 +245,6 @@ class PutPointsInPolygonsAlgorithm(QgsProcessingAlgorithm):
 
             grids = []
             
-            if GRID_TYPE == 1 or GRID_TYPE == 2:
-                points_lyr_square = processing.run(
-                    "native:creategrid", {
-                        'TYPE':0,
-                        'EXTENT':bb_for_grid_creation,
-                        'HSPACING':SPACING,
-                        'VSPACING':SPACING,
-                        'HOVERLAY':1,
-                        'VOVERLAY':1,
-                        'CRS':QgsCoordinateReferenceSystem(crs_obj),
-                        'OUTPUT':'TEMPORARY_OUTPUT'})["OUTPUT"]
-                grids.append(points_lyr_square)
-            
             if GRID_TYPE == 0 or GRID_TYPE == 2:
                 polygon_lyr_triang = processing.run(
                     "native:creategrid", {
@@ -275,16 +262,30 @@ class PutPointsInPolygonsAlgorithm(QgsProcessingAlgorithm):
                         'INPUT':polygon_lyr_triang,
                         'ALL_PARTS':True,
                         'OUTPUT':'TEMPORARY_OUTPUT'})["OUTPUT"]
-                
-                grids.append(points_lyr_triang)
+                range1 = range(0, 360, int(360 / ROT_ITERATIONS))
+                grids.append({"lyr": points_lyr_triang, "rng": range1})
+
+            if GRID_TYPE == 1 or GRID_TYPE == 2:
+                points_lyr_square = processing.run(
+                    "native:creategrid", {
+                        'TYPE':0,
+                        'EXTENT':bb_for_grid_creation,
+                        'HSPACING':SPACING,
+                        'VSPACING':SPACING,
+                        'HOVERLAY':1,
+                        'VOVERLAY':1,
+                        'CRS':QgsCoordinateReferenceSystem(crs_obj),
+                        'OUTPUT':'TEMPORARY_OUTPUT'})["OUTPUT"]
+                range2 = range(0, 91, int(90 / ROT_ITERATIONS))
+                grids.append({"lyr": points_lyr_square, "rng": range2})
             
             best_constellation = {"layer": None, "NUMPOINTS": 0}
 
-            for grid in grids:    
-                for degrees in range(0, 91, int(90 / ROT_ITERATIONS)):
+            for grid in grids:
+                for degrees in grid["rng"]:
                     points_lyr_rotated = processing.run(
                         "native:rotatefeatures", {
-                            'INPUT':grid,
+                            'INPUT':grid["lyr"],
                             'ANGLE':degrees,
                             'ANCHOR': f"{bb_centroid.x()}, {bb_centroid.y()} [EPSG:{crs_epsg}]",
                             # 'ANCHOR':bb_centroid,
@@ -329,20 +330,25 @@ class PutPointsInPolygonsAlgorithm(QgsProcessingAlgorithm):
                                         'OUTPUT':'TEMPORARY_OUTPUT'})["OUTPUT"]
 
                             # Retrieve the number of points from the only feature in the counter layer.            
-                            numpoints = int(counter_lyr.getFeature(1)["NUMPOINTS"])
+                            try:
+                                numpoints = int(counter_lyr.getFeature(1)["NUMPOINTS"])
 
-                            # Make MultiPoint from the single points.
-                            multipart_points_lyr = processing.run(
-                                "native:collect", {
-                                    'INPUT':points_clipped_lyr,
-                                    'FIELD':[],
-                                    'OUTPUT':'TEMPORARY_OUTPUT'
-                                    })["OUTPUT"]
-                            
-                            if numpoints > best_constellation['NUMPOINTS']:
-                                layer_cloned = multipart_points_lyr.clone()
-                                best_constellation["layer"] = layer_cloned
-                                best_constellation["NUMPOINTS"] = numpoints
+                                # Make MultiPoint from the single points.
+                                multipart_points_lyr = processing.run(
+                                    "native:collect", {
+                                        'INPUT':points_clipped_lyr,
+                                        'FIELD':[],
+                                        'OUTPUT':'TEMPORARY_OUTPUT'
+                                        })["OUTPUT"]
+                                
+                                if numpoints > best_constellation['NUMPOINTS']:
+                                    layer_cloned = multipart_points_lyr.clone()
+                                    best_constellation["layer"] = layer_cloned
+                                    best_constellation["NUMPOINTS"] = numpoints
+
+                            except (RuntimeError):
+                                print("RuntimeError was thrown. Continue for loop.")
+                                continue
 
             # Update the progress bar.
             feedback.setProgress(int(current * total))            
