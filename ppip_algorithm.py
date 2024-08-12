@@ -244,7 +244,7 @@ class PutPointsInPolygonsAlgorithm(QgsProcessingAlgorithm):
             bb_for_grid_creation = QgsReferencedRectangle(f_bb, crs_obj)
             print(type(bb_for_grid_creation))
             
-            points_lyr = processing.run(
+            points_lyr_square = processing.run(
                 "native:creategrid", {
                     'TYPE':0,
                     'EXTENT':bb_for_grid_creation,
@@ -255,12 +255,29 @@ class PutPointsInPolygonsAlgorithm(QgsProcessingAlgorithm):
                     'CRS':QgsCoordinateReferenceSystem('EPSG:25833'),
                     'OUTPUT':'TEMPORARY_OUTPUT'})["OUTPUT"]
             
+            polygon_lyr_triang = processing.run(
+                "native:creategrid", {
+                    'TYPE':4,
+                    'EXTENT':bb_for_grid_creation,
+                    'HSPACING':SPACING,
+                    'VSPACING':SPACING,
+                    'HOVERLAY':1,
+                    'VOVERLAY':1,
+                    'CRS':QgsCoordinateReferenceSystem('EPSG:25833'),
+                    'OUTPUT':'TEMPORARY_OUTPUT'})["OUTPUT"]
+            
+            points_lyr_triang = processing.run(
+                "native:centroids", {
+                    'INPUT':polygon_lyr_triang,
+                    'ALL_PARTS':True,
+                    'OUTPUT':'TEMPORARY_OUTPUT'})["OUTPUT"]
+            
             best_constellation = {"layer": None, "NUMPOINTS": 0}
 
             for degrees in range(0, 91, int(90 / ROT_ITERATIONS)):
                 points_lyr_rotated = processing.run(
                     "native:rotatefeatures", {
-                        'INPUT':points_lyr,
+                        'INPUT':points_lyr_triang,
                         'ANGLE':degrees,
                         'ANCHOR': f"{bb_centroid.x()}, {bb_centroid.y()} [EPSG:{crs_epsg}]",
                         # 'ANCHOR':bb_centroid,
