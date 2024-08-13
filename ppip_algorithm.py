@@ -262,7 +262,7 @@ class PutPointsInPolygonsAlgorithm(QgsProcessingAlgorithm):
                         'INPUT':polygon_lyr_triang,
                         'ALL_PARTS':True,
                         'OUTPUT':'TEMPORARY_OUTPUT'})["OUTPUT"]
-                range1 = range(0, 360, int(360 / ROT_ITERATIONS))
+                range1 = range(0, 120, int(120 / ROT_ITERATIONS))
                 grids.append({"lyr": points_lyr_triang, "rng": range1})
 
             if GRID_TYPE == 1 or GRID_TYPE == 2:
@@ -276,7 +276,7 @@ class PutPointsInPolygonsAlgorithm(QgsProcessingAlgorithm):
                         'VOVERLAY':1,
                         'CRS':QgsCoordinateReferenceSystem(crs_obj),
                         'OUTPUT':'TEMPORARY_OUTPUT'})["OUTPUT"]
-                range2 = range(0, 91, int(90 / ROT_ITERATIONS))
+                range2 = range(0, 90, int(90 / ROT_ITERATIONS))
                 grids.append({"lyr": points_lyr_square, "rng": range2})
             
             best_constellation = {"layer": None, "NUMPOINTS": 0}
