@@ -397,7 +397,41 @@ class PutPointsInPolygonsAlgorithm(QgsProcessingAlgorithm):
         should provide a basic description about what the algorithm does and the
         parameters and outputs associated with it..
         """
-        return self.tr("Example algorithm short description")
+        return self.tr('This algorithm takes a polygon layer and asks you to enter\
+                       a "Distance between points" value. Taking the distance constraint \
+                       into account, it attempts to find an arrangement of points within \
+                       each polygon that yields the highest possible number of points \
+                       (note the caveat in the following paragraph). The algorithm outputs \
+                       a multipoint layer containing one feature for each feature from the \
+                       input layer. Its attributes are an "FID" (int) field referring to \
+                       the input feature\'s fid and a "NUMPOINTS" (int) field stating the \
+                       number of points that were fitted. The multipoint geometry contains \
+                       an arrangement of points that yielded the highest number of points.\
+                       \n\nPlease bear in mind that this is an approximation algorithm that \
+                       is based on testing a large number of possible point arrangements. \
+                       This approach does not make it possible to find the very best \
+                       solution with certainty.\n\nThe basis for the testing process are \
+                       regular point grids. You can choose whether you would like the \
+                       algorithm to use square based grids, triangle based grids or both. \
+                       Please note that square based grids provide the optimum result only \
+                       in special cases (relatively small, rectangular input polygons).\
+                       \n\nThe algorithm takes the grids and varies them by moving them \
+                       step by step in the x-direction and y-direction and rotating them \
+                       (and all of them at the same time). You can specify how many \
+                       iterations you want to be performed for each of these factors. Here \
+                       is an example to help you understand this: If you have specified 500 \
+                       metres as the distance and 10 as the number of iterations (x-direction), \
+                       the grid is moved horizontally in steps of 50 metres. The range for \
+                       rotation iterations is between 0 and 90 (excluded) degrees for square \
+                       based grids and 0 to 120 (excluded) degrees for triangle based grids.\
+                       \n\nHigher numbers of iterations do not necessarily lead to better \
+                       results (it is even possible to get worse results). As a starting \
+                       point, use the default values (5 iterations for each factor) and then \
+                       experiment with different settings. Too many iterations can bring the \
+                       computer to its limits and cause the plug-in (and QGIS itself) to \
+                       crash. 10 iterations each should be feasible, beyond that it may get \
+                       critical. If you run the plugin with a higher number of iterations, \
+                       please leave QGIS alone to minimise the risk of crashes.')
 
     def group(self):
         """
