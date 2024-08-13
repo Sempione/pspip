@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 /***************************************************************************
- PutPointsInPolygons
+ PutSpacedPointsInPolygons
                                  A QGIS plugin
  Approximates the maximum number of points in polygons for a certain minimum
  distance between the points.
@@ -30,11 +30,11 @@ __copyright__ = '(C) 2024 by Christian Lesem'
 
 # noinspection PyPep8Naming
 def classFactory(iface):  # pylint: disable=invalid-name
-    """Load PutPointsInPolygons class from file PutPointsInPolygons.
+    """Load PutSpacedPointsInPolygons class from file PutSpacedPointsInPolygons.
 
     :param iface: A QGIS interface instance.
     :type iface: QgsInterface
     """
     #
-    from .ppip import PutPointsInPolygonsPlugin
-    return PutPointsInPolygonsPlugin()
+    from .pspip import PutSpacedPointsInPolygonsPlugin
+    return PutSpacedPointsInPolygonsPlugin()

@@ -2,7 +2,7 @@
 
 """
 /***************************************************************************
- PutPointsInPolygons
+ PutSpacedPointsInPolygons
                                  A QGIS plugin
  Approximates the maximum number of points in polygons for a certain minimum
  distance between the points.
@@ -54,7 +54,7 @@ from qgis.core import (QgsProcessing,
 
 from math import sqrt
 
-class PutPointsInPolygonsAlgorithm(QgsProcessingAlgorithm):
+class PutSpacedPointsInPolygonsAlgorithm(QgsProcessingAlgorithm):
     """
     All Processing algorithms should extend the QgsProcessingAlgorithm
     class.
@@ -384,14 +384,14 @@ class PutPointsInPolygonsAlgorithm(QgsProcessingAlgorithm):
         lowercase alphanumeric characters only and no spaces or other
         formatting characters.
         """
-        return 'putpointsinpolygons'
+        return 'putspacedpointsinpolygons'
 
     def displayName(self):
         """
         Returns the translated algorithm name, which should be used for any
         user-visible display of the algorithm name.
         """
-        return self.tr("Put points in polygons")
+        return self.tr("Put spaced points in polygons")
     
     def shortHelpString(self):
         """
@@ -456,7 +456,7 @@ class PutPointsInPolygonsAlgorithm(QgsProcessingAlgorithm):
         return QCoreApplication.translate('Processing', string)
 
     def createInstance(self):
-        return PutPointsInPolygonsAlgorithm()
+        return PutSpacedPointsInPolygonsAlgorithm()
     
     # def flags(self):
     #     return super().flags() | QgsProcessingAlgorithm.FlagNoThreading

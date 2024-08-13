@@ -2,7 +2,7 @@
 
 """
 /***************************************************************************
- PutPointsInPolygons
+ PutSpacedPointsInPolygons
                                  A QGIS plugin
  Approximates the maximum number of points in polygons for a certain minimum 
  distance between the points.
@@ -36,7 +36,7 @@ import sys
 import inspect
 
 from qgis.core import QgsProcessingAlgorithm, QgsApplication
-from .ppip_provider import PutPointsInPolygonsProvider
+from .pspip_provider import PutSpacedPointsInPolygonsProvider
 
 cmd_folder = os.path.split(inspect.getfile(inspect.currentframe()))[0]
 
@@ -44,14 +44,14 @@ if cmd_folder not in sys.path:
     sys.path.insert(0, cmd_folder)
 
 
-class PutPointsInPolygonsPlugin:
+class PutSpacedPointsInPolygonsPlugin:
 
     def __init__(self):
         self.provider = None
 
     def initProcessing(self):
         """Init Processing provider for QGIS >= 3.8."""
-        self.provider = PutPointsInPolygonsProvider()
+        self.provider = PutSpacedPointsInPolygonsProvider()
         QgsApplication.processingRegistry().addProvider(self.provider)
 
     def initGui(self):
