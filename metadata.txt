@@ -5,7 +5,7 @@
 [general]
 name=Put spaced points in polygons
 qgisMinimumVersion=3.0
-description=Approximates the maximum number of points in polygons for a certain minimum distance between the points.
+description=Attempts to find the highest possible number of points in polygons if a certain distance between the points is given. Outputs a multipoint layer.
 version=0.1
 author=Christian Lesem
 email=christian@lesem.eu
@@ -13,7 +13,7 @@ email=christian@lesem.eu
 about=Provide a brief description of the plugin and its purpose.
 
 tracker=http://bugs
-repository=http://repo
+repository=https://github.com/Sempione/pspip
 # End of mandatory metadata
 
 # Recommended items:
