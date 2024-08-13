@@ -70,7 +70,7 @@ class PutPointsInPolygonsAlgorithm(QgsProcessingAlgorithm):
     ITER_X = 'ITER_X'
     ITER_Y = 'ITER_Y'
     ITER_ROT = 'ITER_ROT'
-    DROPDOWN = 'DROPDOWN'
+    GRID_SELECTION = 'GRID_SELECTION'
 
     def initAlgorithm(self, config):
         """
@@ -142,7 +142,7 @@ class PutPointsInPolygonsAlgorithm(QgsProcessingAlgorithm):
 
         self.addParameter(
             QgsProcessingParameterEnum(
-                self.DROPDOWN,
+                self.GRID_SELECTION,
                 self.tr('Grid types to use'),
                 options=[self.tr('only triangle based grids'),
                          self.tr('only square based grids'),
@@ -167,7 +167,7 @@ class PutPointsInPolygonsAlgorithm(QgsProcessingAlgorithm):
         ROT_ITERATIONS = self.parameterAsInt(parameters, self.ITER_X, context)
         X_ITERATIONS = self.parameterAsInt(parameters, self.ITER_Y, context)
         Y_ITERATIONS = self.parameterAsInt(parameters, self.ITER_ROT, context)
-        GRID_TYPE = self.parameterAsInt(parameters, self.DROPDOWN, context)
+        GRID_TYPE = self.parameterAsInt(parameters, self.GRID_SELECTION, context)
         
         # Prepare fields that are to be added to the sink (the output layer).
         sink_fields = QgsFields()
