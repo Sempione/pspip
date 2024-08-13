@@ -205,9 +205,6 @@ class PutPointsInPolygonsAlgorithm(QgsProcessingAlgorithm):
 
         total_iterations = 0
         for current, feature in enumerate(features):
-            # Stop the algorithm if cancel button has been clicked.
-            if feedback.isCanceled():
-                break
 
             f_id = feature.id()
 
@@ -303,6 +300,11 @@ class PutPointsInPolygonsAlgorithm(QgsProcessingAlgorithm):
                                 })["OUTPUT"]
                         
                         for y_translate_dist in range(0, SPACING, int(SPACING / Y_ITERATIONS)):
+
+                            # Stop the algorithm if cancel button has been clicked.
+                            if feedback.isCanceled():
+                                break
+
                             points_lyr_y_shifted = processing.run("native:translategeometry", {
                             'INPUT':points_lyr_x_shifted,
                             'DELTA_X':0,
@@ -310,7 +312,7 @@ class PutPointsInPolygonsAlgorithm(QgsProcessingAlgorithm):
                             'DELTA_Z':0,
                             'DELTA_M':0,
                             'OUTPUT':'TEMPORARY_OUTPUT'
-                                })["OUTPUT"]
+                                },)["OUTPUT"]
                             
                             # Clip the points lyr with the feature layer as the overlay.
                             points_clipped_lyr = processing.run(
