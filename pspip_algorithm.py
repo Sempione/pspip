@@ -184,6 +184,8 @@ class PutSpacedPointsInPolygonsAlgorithm(QgsProcessingAlgorithm):
         
         # Compute the number of steps to display within the progress bar.
         total = 100.0 / (source.featureCount() * X_ITERATIONS * Y_ITERATIONS * ROT_ITERATIONS) if source.featureCount() else 0
+        total = total / 2 if GRID_TYPE == 2 else total
+        
         # Get source EPSG code.       
         crs_epsg = int(source.sourceCrs().authid().split(":")[1])
         # Create CRS object. (This is going to be needed when creating
