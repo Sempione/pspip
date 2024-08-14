@@ -371,26 +371,25 @@ class PutSpacedPointsInPolygonsAlgorithm(QgsProcessingAlgorithm):
                                         'OUTPUT':'TEMPORARY_OUTPUT'})["OUTPUT"]
 
                             # Retrieve the number of points from the only feature in the counter layer.            
-                            try:
-                                numpoints = int(counter_lyr.getFeature(1)["NUMPOINTS"])
 
-                                # Make MultiPoint from the single points.
-                                multipart_points_lyr = processing.run(
-                                    "native:collect", {
-                                        'INPUT':points_clipped_lyr,
-                                        'FIELD':[],
-                                        'OUTPUT':'TEMPORARY_OUTPUT'
-                                        })["OUTPUT"]
-                                
-                                if numpoints > best_arrangement['NUMPOINTS']:
-                                #    layer_cloned = multipart_points_lyr.clone()
-                                #    best_arrangement["layer"] = layer_cloned
-                                    best_arrangement["layer"] = multipart_points_lyr
-                                    best_arrangement["NUMPOINTS"] = numpoints
+                            numpoints = int(counter_lyr.getFeature(1)["NUMPOINTS"])
 
-                            except (RuntimeError):
-                                print("RuntimeError was thrown. Continue for loop.")
-                                continue         
+                            # Make MultiPoint from the single points.
+                            multipart_points_lyr = processing.run(
+                                "native:collect", {
+                                    'INPUT':points_clipped_lyr,
+                                    'FIELD':[],
+                                    'OUTPUT':'TEMPORARY_OUTPUT'
+                                    })["OUTPUT"]
+                            
+                            if numpoints > best_arrangement['NUMPOINTS']:
+                            #    layer_cloned = multipart_points_lyr.clone()
+                            #    best_arrangement["layer"] = layer_cloned
+                                best_arrangement["layer"] = multipart_points_lyr
+                                best_arrangement["NUMPOINTS"] = numpoints
+
+                            print("RuntimeError was thrown. Continue for loop.")
+                            continue         
             
             # Create and fill the feature that is to be added to the sink.
             feature_obj_2 = QgsFeature()  
@@ -493,5 +492,10 @@ please leave QGIS alone to minimise the risk of crashes.')
     def createInstance(self):
         return PutSpacedPointsInPolygonsAlgorithm()
     
-    # def flags(self):
-    #     return super().flags() | QgsProcessingAlgorithm.FlagNoThreading
+    # The algorithm does not appear to be thread-safe, which manifests itself by
+    # crashes, for example when moving the processing window.
+    # The following code ensures that the algorithm runs in the QGIS main thread,
+    # which makes it much more stable.
+    # Compare: https://docs.qgis.org/3.34/en/docs/user_manual/processing/scripts.html#flags
+    def flags(self):
+        return super().flags() | QgsProcessingAlgorithm.FlagNoThreading
