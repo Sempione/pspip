@@ -4,62 +4,62 @@
 <context>
     <name>PutSpacedPointsInPolygonsAlgorithm</name>
     <message>
-        <location filename="../pspip_algorithm.py" line="82"/>
+        <location filename="../pspip_algorithm.py" line="105"/>
         <source>Input layer</source>
         <translation>Eingabelayer</translation>
     </message>
     <message>
-        <location filename="../pspip_algorithm.py" line="93"/>
+        <location filename="../pspip_algorithm.py" line="116"/>
         <source>Fitted_point_grids</source>
         <translation>Eingepasste_Punkte</translation>
     </message>
     <message>
-        <location filename="../pspip_algorithm.py" line="101"/>
+        <location filename="../pspip_algorithm.py" line="124"/>
         <source>Distance between points</source>
         <translation>Abstand zwischen den Punkten</translation>
     </message>
     <message>
-        <location filename="../pspip_algorithm.py" line="111"/>
+        <location filename="../pspip_algorithm.py" line="134"/>
         <source>Number of iterations (x-direction)</source>
         <translation>Anzahl der Schritte (x-Richtung)</translation>
     </message>
     <message>
-        <location filename="../pspip_algorithm.py" line="123"/>
+        <location filename="../pspip_algorithm.py" line="146"/>
         <source>Number of iterations (y-direction)</source>
         <translation>Anzahl der Schritte (y-Richtung)</translation>
     </message>
     <message>
-        <location filename="../pspip_algorithm.py" line="135"/>
+        <location filename="../pspip_algorithm.py" line="158"/>
         <source>Number of iterations (rotation)</source>
         <translation>Anzahl der Schritte (Rotation)</translation>
     </message>
     <message>
-        <location filename="../pspip_algorithm.py" line="147"/>
+        <location filename="../pspip_algorithm.py" line="170"/>
         <source>Grid types to use</source>
         <translation>Zu verwendende Gittertypen</translation>
     </message>
     <message>
-        <location filename="../pspip_algorithm.py" line="147"/>
+        <location filename="../pspip_algorithm.py" line="171"/>
         <source>only triangle based grids</source>
         <translation>nur auf Dreiecken basierende Gitter</translation>
     </message>
     <message>
-        <location filename="../pspip_algorithm.py" line="147"/>
+        <location filename="../pspip_algorithm.py" line="172"/>
         <source>only square based grids</source>
         <translation>nur auf Quadraten basierende Gitter</translation>
     </message>
     <message>
-        <location filename="../pspip_algorithm.py" line="147"/>
+        <location filename="../pspip_algorithm.py" line="173"/>
         <source>both triangle and square based grids</source>
         <translation>sowohl auf Dreiecken als auch auf Quadraten basierende Gitter</translation>
     </message>
     <message>
-        <location filename="../pspip_algorithm.py" line="424"/>
+        <location filename="../pspip_algorithm.py" line="445"/>
         <source>Put spaced points in polygons</source>
         <translation>Punkte mit Abstand in Polygone setzen</translation>
     </message>
     <message>
-        <location filename="../pspip_algorithm.py" line="432"/>
+        <location filename="../pspip_algorithm.py" line="453"/>
         <source>This algorithm takes a polygon layer and asks you to enter                       a &quot;Distance between points&quot; value. Taking the distance constraint                        into account, it attempts to find an arrangement of points within                        each polygon that yields the highest possible number of points                        (note the caveat in the following paragraph). The algorithm outputs                        a multipoint layer containing one feature for each feature from the                        input layer. Its attributes are an &quot;FID&quot; (int) field referring to                        the input feature&apos;s fid and a &quot;NUMPOINTS&quot; (int) field stating the                        number of points that were fitted. The multipoint geometry contains                        an arrangement of points that yielded the highest number of points.                       
 
 Please bear in mind that this is an approximation algorithm that                        is based on testing a large number of possible point arrangements.                        This approach does not make it possible to find the very best                        solution with certainty.
