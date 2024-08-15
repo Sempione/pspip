@@ -34,9 +34,7 @@ from qgis import processing
 
 from qgis.PyQt.QtCore import (QCoreApplication,
                               QVariant,
-                              QSettings,
-                              QTranslator,
-                              qVersion)
+                              QSettings,)
 
 from qgis.core import (QgsProcessing,
                        QgsFeatureSink,
@@ -78,6 +76,9 @@ class PutSpacedPointsInPolygonsAlgorithm(QgsProcessingAlgorithm):
 
     def __init__(self):
         super().__init__()
+        """Unfortunately, the conventional method for implementing i18n (using .ts and .qm files) did not work
+           In order to still be able to provide a translation into German, I have implemented the following 'hack'.
+        """
         self.own_i18n  = {"INPUT": {"en": "Input layer", "de": "Eingabelayer"},
                         "OUTPUT": {"en": "Fitted_point_grids", "de": "Eingabelayer"},
                         "DISTANCE": {"en": "Distance between points", "de": "Abstand zwischen den Punkten"},
@@ -86,20 +87,23 @@ class PutSpacedPointsInPolygonsAlgorithm(QgsProcessingAlgorithm):
                         "ITER_ROT": {"en": "Number of iterations (rotation)", "de": "Anzahl der Schritte (Rotation)"},
                         "GRID_MENU": {"en": "Grid types to use", "de": "Zu verwendende Punktrastertypen"},
                         "GRID_IT_0": {"en": "only triangle based grids", "de": "nur auf Dreiecken basierende Punktraster"},
-                        "GRID_IT_1": {"en": "only square based grids", "de": "nur auf Dreiecken basierende Punktraster"},
-                        "GRID_IT_2": {"en": "both triangle and square based grids", "de": "nur auf Dreiecken basierende Punktraster"},
+                        "GRID_IT_1": {"en": "only square based grids", "de": "nur auf Quadraten basierende Punktraster"},
+                        "GRID_IT_2": {"en": "both triangle and square based grids", "de": "sowohl auf Dreiecken als auch auf Quadraten basierende Punktraster"},
                         "NAME": {"en": "Put spaced points in polygons", "de": "Punkte mit Abstand in Polygone setzen"},
                         "HELP": {"en": "This algorithm takes a polygon layer and asks you to enter a &quot;Distance between points&quot; value. Taking the distance constraint into account, it attempts to find an arrangement of points within each polygon that yields the highest possible number of points (note the caveat in the following paragraph). The algorithm outputs a multipoint layer containing one feature for each feature from the input layer. Its attributes are an &quot;FID&quot; (int) field referring to the input feature&apos;s fid and a &quot;NUMPOINTS&quot; (int) field stating the number of points that were fitted. The multipoint geometry contains an arrangement of points that yielded the highest number of points.\n\nPlease bear in mind that this is an approximation algorithm that is based on testing a large number of possible point arrangements. This approach does not make it possible to find the very best solution with certainty.\n\nThe basis for the testing process are regular point grids. You can choose whether you would like the algorithm to use square based grids, triangle based grids or both. Please note that square based grids provide the optimum result only in special cases (relatively small, rectangular input polygons).\n\nThe algorithm takes the grids and varies them by moving them step by step in the x-direction and y-direction and rotating them (and all of them at the same time). You can specify how many iterations you want to be performed for each of these factors. Here is an example to help you understand this: If you have specified 500 metres as the distance and 10 as the number of iterations (x-direction), the grid is moved horizontally in steps of 50 metres. The range for rotation iterations is between 0 and 90 degrees for square based grids and 0 to 120 degrees for triangle based grids. Further rotations would not usually lead to better results.\n\nHigher numbers of iterations do not necessarily lead to better results (it is even possible to get worse results). As a starting point, use the default values and then experiment with different settings.", "de": "Dieser Algorithmus erwartet einen Polygonlayer und einen Wert &quot;Abstand zwischen den Punkten&quot;. Es wird versucht, unter Einhaltung der Abstandsbedingung eine Anordnung von Punkten zu finden, mit der eine eine möglichst große Anzahl von Punkten in dem Polygon untergebracht werden kann (beachten Sie hierzu den Vorbehalt im folgenden Absatz). Der Algorithmus gibt einen MultiPoint-Layer aus, der für jedes Merkmal des Eingabelayers ein Merkmal enthält. Seine Attribute sind ein Feld &quot;FID&quot; (int), das sich auf die FID des Eingabe-Features bezieht, und ein Feld &quot;NUMPOINTS&quot; (int), das die Anzahl der eingepassten Punkte angibt. Die MultiPoint-Geometrie enthält eine Anordnung von Punkten, die die höchste Punkteanzahl ergibt.\n\nBitte beachten Sie, dass es sich um einen Näherungsalgorithmus handelt, der darauf basiert, eine große Anzahl von möglichen Punktanordnungen zu testen. Bei diesem Ansatz kann nicht garantiert werden, dass tatsächlich die allerbeste Lösung gefunden wird.\n\nDie Berechnungsgrundlage für das Testverfahren sind regelmäßige Punktraster. Sie können wählen, ob der Algorithmus auf Quadraten basierende Punktraster, auf Dreiecken basierende Punktraster oder beide verwenden soll. Bitte beachten Sie, dass quadratische Punktraster nur in speziellen Fällen (relativ kleine, rechteckige Eingabepolygone) das optimale Ergebnis liefern.\n\nDer Algorithmus variiert die Punktraster, indem er sie schrittweise in x- und y-Richtung verschiebt und dreht (und zwar alle Faktoren gleichzeitig). Sie können angeben, wie viele Iterationen für jeden dieser Faktoren durchgeführt werden sollen. Hierzu folgendes Beispiel: Wenn Sie 500 Meter als Entfernung und 10 als Anzahl der Iterationen (x-Richtung) angegeben haben, wird das Punktraster in Schritten von 50 Metern horizontal verschoben. Der Wertebereich für die Drehungen liegt zwischen 0 und 90 Grad bei auf Quadraten basierenden Rastern und zwischen 0 und 120 Grad bei auf Dreiecken basierenden Rastern. Weitere Drehungen würden in der Regel zu keinen besseren Ergebnissen führen.\n\nEine höhere Anzahl von Iterationen führt nicht unbedingt zu besseren Ergebnissen (es ist sogar möglich, schlechtere Ergebnisse zu erzielen). Verwenden Sie als Ausgangspunkt die Standardwerte und experimentieren Sie dann mit verschiedenen Einstellungen."}}
 
-        # initialize plugin directory
-        self.plugin_dir = os.path.dirname(__file__)
-        # initialize locale
+        # Initialise plugin directory.
+        # self.plugin_dir = os.path.dirname(__file__)
+
+        # Initialise locale.
         self.locale = QSettings().value('locale/userLocale')[0:2]
+
         # locale_path = os.path.join(
         #    self.plugin_dir,
         #    'i18n',
         #    'pspip_{}.qm'.format(locale))
 
+        # Initialise a lang attribute.
         self.lang = "de" if self.locale == "de" else "en"
 
         #if os.path.exists(locale_path):
@@ -109,17 +113,12 @@ class PutSpacedPointsInPolygonsAlgorithm(QgsProcessingAlgorithm):
         #    if qVersion() > '4.3.3':
         #        QCoreApplication.installTranslator(self.translator)
 
-        #  Until then, use the subsequent "hack"...
     def initAlgorithm(self, config):
         """
         Here we define the inputs and output of the algorithm, along
         with some other properties.
         """
 
-
-
-
-        
         # Add the input vector features source (limited to polygon layers).
         self.addParameter(
             QgsProcessingParameterFeatureSource(
@@ -201,10 +200,8 @@ class PutSpacedPointsInPolygonsAlgorithm(QgsProcessingAlgorithm):
         """
         Here is where the processing itself takes place.
         """
-
         # Retrieve the feature source.
         source = self.parameterAsSource(parameters, self.INPUT, context)
-        print(type(source))
 
         # Retrieve additional parameters.
         SPACING = self.parameterAsInt(parameters, self.DISTANCE, context)
@@ -215,7 +212,7 @@ class PutSpacedPointsInPolygonsAlgorithm(QgsProcessingAlgorithm):
         
         # Prepare fields that are to be added to the sink (the output layer).
         sink_fields = QgsFields()
-        sink_fields.append(QgsField('fid', QVariant.Int))
+        sink_fields.append(QgsField('FID', QVariant.Int))
         sink_fields.append(QgsField('NUMPOINTS', QVariant.Int))
 
         # Retrieve the sink. The 'dest_id' variable is used
@@ -226,55 +223,45 @@ class PutSpacedPointsInPolygonsAlgorithm(QgsProcessingAlgorithm):
         
         # Compute the number of steps to display within the progress bar.
         total = 100.0 / (source.featureCount() * X_ITERATIONS * Y_ITERATIONS * ROT_ITERATIONS) if source.featureCount() else 0
+        # If GRID_TYPE == 2, the number of computations is doubled because two base grids are used
         total = total / 2 if GRID_TYPE == 2 else total
         
         # Get source EPSG code.       
         crs_epsg = int(source.sourceCrs().authid().split(":")[1])
-        # Create CRS object. (This is going to be needed when creating
-        # a QgsReferencedRectangle object example.)
+        # Create CRS object. (This is going to be needed when creating a QgsReferencedRectangle object.)
         crs_obj = QgsCoordinateReferenceSystem(crs_epsg, QgsCoordinateReferenceSystem.EpsgCrsId)
 
+        # Initialise iteration counter (needed for updating the progress bar).
+        iter_count = 0 
+
         #### THE CENTRAL PART OF THE ALGORITHM
-        # Iterate over each feature of the input polygon layer, performing the following steps:
-        # + Create a temporary polygon layer and add only one element (containing the feature's geometry).
-        #   (This is going to be needed later, when clipping the points.)
-        # + Get the feature's bounding box.
-        # + Create a grid of points within the above bounding box (-> output: point layer).
-        # + Clip the point layer using the temporary polygon layer.
-        # + Count the points within the feature polygon, retrieve the count ("NUMPOINTS") from the resulting layer.
-        # + Use the "Collect geometries" tool ("native:collect") to transform the remaining point freatures
-        #   from the points layer into a single MultiPoint feature, retrieve the resulting geometry
-        # + Write the feature's fid, geometry (the above MultiPoint geometry) and the point count ("NUMPOINTS")
-        #   into the feature sink.
-
-        iter_count = 0 # needed for the progress bar
-
+        # Iterate over each feature of the input polygon layer.
         for feature in source.getFeatures():
 
             # Stop the algorithm if cancel button has been clicked.
             if feedback.isCanceled():
                 break  
 
-            # Create new layer containing only the current feature (only geometry).
+            # Create new temporary layer containing only the current feature (only geometry).
             # This will be needed later as input for the "native:clip" and 
             # "native:countpointsinpolygon" processing tools, which only accept fully
-            # fledged layers als "OVERLAY" and "POLYGONS" paramters respectively.
+            # fledged layers als "OVERLAY" and "POLYGONS" parameters respectively.
             #
             # Simply selecting the current feature from the input layer using a construct
             # akin to input_lyr.selectByExpression(f'"fid"=\'{f_id}\'') does not work 
             # because the input_lyr in this case is not a vanilla QgsVectorLayer object
             # but a QgsProcessingFeatureSource object, which does not provide a selection
             # method.
-            lyr_with_current_feature_only = QgsVectorLayer(f'Polygon?crs={crs_epsg}', f'{source.sourceName()}_temp1', 'memory')
-            feature_obj_1 = QgsFeature()
-            feature_obj_1.setGeometry(feature.geometry())
+            lyr_with_current_feature_only = QgsVectorLayer(f'Polygon?crs={crs_epsg}', 'temp', 'memory')
+            extracted_feature = QgsFeature()
+            extracted_feature.setGeometry(feature.geometry())
             pr = lyr_with_current_feature_only.dataProvider()
-            pr.addFeatures([feature_obj_1])
+            pr.addFeatures([extracted_feature])
 
             # Get the feature's bounding box (-> QgsRectangle object)
             f_bb = feature.geometry().boundingBox()
 
-            # Make the bounding box square-shaped by extending the narrow sides
+            # Make the bounding box square-shaped by extending the narrow sides evenly.
             bb_width = f_bb.width()
             bb_height = f_bb.height()
 
@@ -287,24 +274,44 @@ class PutSpacedPointsInPolygonsAlgorithm(QgsProcessingAlgorithm):
                 f_bb.setXMinimum(f_bb.xMinimum() - diff_side)
                 f_bb.setXMaximum(f_bb.xMaximum() + diff_side)
 
-            # Add an additional padding of length "SPACING" in each direction 
+            # The point grids will later be rotated around their centre.
+            # It must be ensured that they will still cover the entire area 
+            # of the feature in question. This is achieved by first creating 
+            # a circumcircle around the square bounding box and then creating 
+            # a bounding box for this circumcircle in turn. The following line 
+            # calculates how much needs to be added to each side of the original 
+            # bounding box in order to obtain the new bounding box.
             account_for_virtual_circle = (f_bb.width() * sqrt(2) - f_bb.width())  / 2
             
+            # The bounding box must be further extended to take into account the
+            # fact that the point grids are also goingt to be shifted, at most 
+            # by the distance between the points (SPACING).
+
+            # Here, the coordinates of the bounding box are actually adapted 
+            # following the above considerations.
             f_bb.set(f_bb.xMinimum() - account_for_virtual_circle - SPACING,
                      f_bb.yMinimum() - account_for_virtual_circle - SPACING,
                      f_bb.xMaximum() + account_for_virtual_circle + SPACING,
                      f_bb.yMaximum() + account_for_virtual_circle + SPACING)
 
+            # The centroid of the bounding box (-> a POINT object)
             bb_centroid = f_bb.center()
 
             bb_for_grid_creation = QgsReferencedRectangle(f_bb, crs_obj)
 
+            # This list is going to contain at least one and at most two point grids.
+            # To be exact: not grids directly, but a dictionary containing the grid and
+            # a range object.
             grids = []
             
+            # Create a triangle based grid.
             if GRID_TYPE == 0 or GRID_TYPE == 2:
+                # There is no processing tool that can directly create triangle based point grids.
+                # Insted, one has to split the task up into two parts:
+                # First, create a hexagonal polygon grid...
                 polygon_lyr_triang = processing.run(
                     "native:creategrid", {
-                        'TYPE':4, # Type 4 stands for hexagons (polygons)
+                        'TYPE':4, # Type 4 stands for hexagon grids.
                         'EXTENT':bb_for_grid_creation,
                         'HSPACING':SPACING,
                         'VSPACING':SPACING,
@@ -313,19 +320,22 @@ class PutSpacedPointsInPolygonsAlgorithm(QgsProcessingAlgorithm):
                         'CRS':QgsCoordinateReferenceSystem(crs_obj),
                         'OUTPUT':'TEMPORARY_OUTPUT'})["OUTPUT"]
                 
-                # By retrieving each hexagon's centroid, a triangle based grid is created.
+                # ... then create the triangle grid by retrieving each hexagon's centroid.
                 points_lyr_triang = processing.run(
                     "native:centroids", {
                         'INPUT':polygon_lyr_triang,
                         'ALL_PARTS':True,
                         'OUTPUT':'TEMPORARY_OUTPUT'})["OUTPUT"]
                 range1 = range(0, 120, int(120 / ROT_ITERATIONS))
+
+                # Add the grid to the grids list.
                 grids.append({"layer": points_lyr_triang, "range": range1})
 
+            # Create a square based grid.
             if GRID_TYPE == 1 or GRID_TYPE == 2:
                 points_lyr_square = processing.run(
                     "native:creategrid", {
-                        'TYPE':0, # Type 0 stands for points (arranged in square based grid)
+                        'TYPE':0, # Type 0 stands for points arranged in square based grid
                         'EXTENT':bb_for_grid_creation,
                         'HSPACING':SPACING,
                         'VSPACING':SPACING,
@@ -334,31 +344,40 @@ class PutSpacedPointsInPolygonsAlgorithm(QgsProcessingAlgorithm):
                         'CRS':QgsCoordinateReferenceSystem(crs_obj),
                         'OUTPUT':'TEMPORARY_OUTPUT'})["OUTPUT"]
                 range2 = range(0, 90, int(90 / ROT_ITERATIONS))
+
+                # Add the grid to the grids list.
                 grids.append({"layer": points_lyr_square, "range": range2})
             
+            # Create a dictionary that stores information about which arrangement of points
+            # is currently the best. Each newly computed arrangement is going to be compared
+            # with the arrangement stored in this dictionary. If the new one is better, it is 
+            # going to replace the old one.
             best_arrangement = {"layer": None, "NUMPOINTS": 0}
 
+            # Do everything that follows for each grid in the grid list.
             for grid in grids:
 
                 # Stop the algorithm if cancel button has been clicked.
                 if feedback.isCanceled():
                     break
 
+                # Here, the heavy lifting starts, with iterated rotations...
                 for degrees in grid["range"]:
 
                     # Stop the algorithm if cancel button has been clicked.
                     if feedback.isCanceled():
                         break
 
+                    # The rotation is to be carried out around the centroid of the feature's bounding box.
                     points_lyr_rotated = processing.run(
                         "native:rotatefeatures", {
                             'INPUT':grid["layer"],
                             'ANGLE':degrees,
                             'ANCHOR': f"{bb_centroid.x()}, {bb_centroid.y()} [EPSG:{crs_epsg}]",
-                            # 'ANCHOR':bb_centroid,
                             'OUTPUT':'TEMPORARY_OUTPUT'
                                 })["OUTPUT"]
                     
+                    # And the horizontal translation ...
                     for x_translate_dist in range(0, SPACING, int(SPACING / X_ITERATIONS)):
 
                         # Stop the algorithm if cancel button has been clicked.
@@ -374,6 +393,7 @@ class PutSpacedPointsInPolygonsAlgorithm(QgsProcessingAlgorithm):
                             'OUTPUT':'TEMPORARY_OUTPUT'
                                 })["OUTPUT"]
                         
+                        # Finally, the vertical translation.
                         for y_translate_dist in range(0, SPACING, int(SPACING / Y_ITERATIONS)):
 
                             # Stop the algorithm if cancel button has been clicked.
@@ -413,38 +433,37 @@ class PutSpacedPointsInPolygonsAlgorithm(QgsProcessingAlgorithm):
                                         'OUTPUT':'TEMPORARY_OUTPUT'})["OUTPUT"]
 
                             # Retrieve the number of points from the only feature in the counter layer.            
-
                             numpoints = int(counter_lyr.getFeature(1)["NUMPOINTS"])
-
-                            # Make MultiPoint from the single points.
-                            multipart_points_lyr = processing.run(
+                            
+                            # Find out: Is the current result the best result?
+                            # If so, store it in the best_arrangement dictionary.
+                            if numpoints > best_arrangement['NUMPOINTS']:
+                                # Make a MultiPoint geometry from the single points.
+                                multipart_points_lyr = processing.run(
                                 "native:collect", {
                                     'INPUT':points_clipped_lyr,
                                     'FIELD':[],
                                     'OUTPUT':'TEMPORARY_OUTPUT'
                                     })["OUTPUT"]
-                            
-                            if numpoints > best_arrangement['NUMPOINTS']:
-                            #    layer_cloned = multipart_points_lyr.clone()
-                            #    best_arrangement["layer"] = layer_cloned
                                 best_arrangement["layer"] = multipart_points_lyr
-                                best_arrangement["NUMPOINTS"] = numpoints
-
-                            print("RuntimeError was thrown. Continue for loop.")
-                            continue         
+                                best_arrangement["NUMPOINTS"] = numpoints      
             
-            # Create and fill the feature that is to be added to the sink.
-            feature_obj_2 = QgsFeature()  
+            # This is where we land after all iterations for a given feature have been carried out.
+            # Now, it's time to write the feature into the sink.
+            # First, we have to create a new feature object and fill it the data.
+            chosen_feature = QgsFeature()
+
+            # Take into account the possibility that no solution was found.  
             if lyr := best_arrangement["layer"]:     
                 geom = lyr.getFeature(1).geometry()
             else:
                 geom = QgsGeometry() # create empty geometry
             
-            feature_obj_2.setGeometry(geom)
-            feature_obj_2.setAttributes([feature.id(), best_arrangement["NUMPOINTS"]])
+            chosen_feature.setGeometry(geom)
+            chosen_feature.setAttributes([feature.id(), best_arrangement["NUMPOINTS"]])
         
             # Add feature to the sink.
-            sink.addFeature(feature_obj_2, QgsFeatureSink.FastInsert)
+            sink.addFeature(chosen_feature, QgsFeatureSink.FastInsert)
 
         # Return the results of the algorithm. 
         return {self.OUTPUT: dest_id}
