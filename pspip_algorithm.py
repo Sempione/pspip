@@ -33,7 +33,10 @@ __revision__ = '$Format:%H$'
 from qgis import processing
 
 from qgis.PyQt.QtCore import (QCoreApplication,
-                              QVariant)
+                              QVariant,
+                              QSettings,
+                              QTranslator,
+                              qVersion)
 
 from qgis.core import (QgsProcessing,
                        QgsFeatureSink,
@@ -53,6 +56,7 @@ from qgis.core import (QgsProcessing,
                        QgsGeometry)
 
 from math import sqrt
+import os
 
 class PutSpacedPointsInPolygonsAlgorithm(QgsProcessingAlgorithm):
     """
@@ -77,6 +81,22 @@ class PutSpacedPointsInPolygonsAlgorithm(QgsProcessingAlgorithm):
         Here we define the inputs and output of the algorithm, along
         with some other properties.
         """
+
+        # initialize plugin directory
+        self.plugin_dir = os.path.dirname(__file__)
+        # initialize locale
+        locale = QSettings().value('locale/userLocale')[0:2]
+        locale_path = os.path.join(
+            self.plugin_dir,
+            'i18n',
+            'pspip_{}.qm'.format(locale))
+
+        if os.path.exists(locale_path):
+            self.translator = QTranslator()
+            self.translator.load(locale_path)
+
+            if qVersion() > '4.3.3':
+                QCoreApplication.installTranslator(self.translator)
 
         # Add the input vector features source (limited to polygon layers).
         self.addParameter(
