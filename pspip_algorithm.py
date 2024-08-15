@@ -76,33 +76,55 @@ class PutSpacedPointsInPolygonsAlgorithm(QgsProcessingAlgorithm):
     ITER_ROT = 'ITER_ROT'
     GRID_SELECTION = 'GRID_SELECTION'
 
+    def __init__(self):
+        super().__init__()
+        self.own_i18n  = {"INPUT": {"en": "Input layer", "de": "Eingabelayer"},
+                        "OUTPUT": {"en": "Fitted_point_grids", "de": "Eingabelayer"},
+                        "DISTANCE": {"en": "Distance between points", "de": "Abstand zwischen den Punkten"},
+                        "ITER_X": {"en": "Number of iterations (x-direction)", "de": "Anzahl der Schritte (x-Richtung)"},
+                        "ITER_Y": {"en": "Number of iterations (y-direction)", "de": "Anzahl der Schritte (y-Richtung)"},
+                        "ITER_ROT": {"en": "Number of iterations (rotation)", "de": "Anzahl der Schritte (Rotation)"},
+                        "GRID_MENU": {"en": "Grid types to use", "de": "Zu verwendende Punktrastertypen"},
+                        "GRID_IT_0": {"en": "only triangle based grids", "de": "nur auf Dreiecken basierende Punktraster"},
+                        "GRID_IT_1": {"en": "only square based grids", "de": "nur auf Dreiecken basierende Punktraster"},
+                        "GRID_IT_2": {"en": "both triangle and square based grids", "de": "nur auf Dreiecken basierende Punktraster"},
+                        "NAME": {"en": "Put spaced points in polygons", "de": "Punkte mit Abstand in Polygone setzen"},
+                        "HELP": {"en": "This algorithm takes a polygon layer and asks you to enter a &quot;Distance between points&quot; value. Taking the distance constraint into account, it attempts to find an arrangement of points within each polygon that yields the highest possible number of points (note the caveat in the following paragraph). The algorithm outputs a multipoint layer containing one feature for each feature from the input layer. Its attributes are an &quot;FID&quot; (int) field referring to the input feature&apos;s fid and a &quot;NUMPOINTS&quot; (int) field stating the number of points that were fitted. The multipoint geometry contains an arrangement of points that yielded the highest number of points.\n\nPlease bear in mind that this is an approximation algorithm that is based on testing a large number of possible point arrangements. This approach does not make it possible to find the very best solution with certainty.\n\nThe basis for the testing process are regular point grids. You can choose whether you would like the algorithm to use square based grids, triangle based grids or both. Please note that square based grids provide the optimum result only in special cases (relatively small, rectangular input polygons).\n\nThe algorithm takes the grids and varies them by moving them step by step in the x-direction and y-direction and rotating them (and all of them at the same time). You can specify how many iterations you want to be performed for each of these factors. Here is an example to help you understand this: If you have specified 500 metres as the distance and 10 as the number of iterations (x-direction), the grid is moved horizontally in steps of 50 metres. The range for rotation iterations is between 0 and 90 degrees for square based grids and 0 to 120 degrees for triangle based grids. Further rotations would not usually lead to better results.\n\nHigher numbers of iterations do not necessarily lead to better results (it is even possible to get worse results). As a starting point, use the default values and then experiment with different settings.", "de": "Dieser Algorithmus erwartet einen Polygonlayer und einen Wert &quot;Abstand zwischen den Punkten&quot;. Es wird versucht, unter Einhaltung der Abstandsbedingung eine Anordnung von Punkten zu finden, mit der eine eine möglichst große Anzahl von Punkten in dem Polygon untergebracht werden kann (beachten Sie hierzu den Vorbehalt im folgenden Absatz). Der Algorithmus gibt einen MultiPoint-Layer aus, der für jedes Merkmal des Eingabelayers ein Merkmal enthält. Seine Attribute sind ein Feld &quot;FID&quot; (int), das sich auf die FID des Eingabe-Features bezieht, und ein Feld &quot;NUMPOINTS&quot; (int), das die Anzahl der eingepassten Punkte angibt. Die MultiPoint-Geometrie enthält eine Anordnung von Punkten, die die höchste Punkteanzahl ergibt.\n\nBitte beachten Sie, dass es sich um einen Näherungsalgorithmus handelt, der darauf basiert, eine große Anzahl von möglichen Punktanordnungen zu testen. Bei diesem Ansatz kann nicht garantiert werden, dass tatsächlich die allerbeste Lösung gefunden wird.\n\nDie Berechnungsgrundlage für das Testverfahren sind regelmäßige Punktraster. Sie können wählen, ob der Algorithmus auf Quadraten basierende Punktraster, auf Dreiecken basierende Punktraster oder beide verwenden soll. Bitte beachten Sie, dass quadratische Punktraster nur in speziellen Fällen (relativ kleine, rechteckige Eingabepolygone) das optimale Ergebnis liefern.\n\nDer Algorithmus variiert die Punktraster, indem er sie schrittweise in x- und y-Richtung verschiebt und dreht (und zwar alle Faktoren gleichzeitig). Sie können angeben, wie viele Iterationen für jeden dieser Faktoren durchgeführt werden sollen. Hierzu folgendes Beispiel: Wenn Sie 500 Meter als Entfernung und 10 als Anzahl der Iterationen (x-Richtung) angegeben haben, wird das Punktraster in Schritten von 50 Metern horizontal verschoben. Der Wertebereich für die Drehungen liegt zwischen 0 und 90 Grad bei auf Quadraten basierenden Rastern und zwischen 0 und 120 Grad bei auf Dreiecken basierenden Rastern. Weitere Drehungen würden in der Regel zu keinen besseren Ergebnissen führen.\n\nEine höhere Anzahl von Iterationen führt nicht unbedingt zu besseren Ergebnissen (es ist sogar möglich, schlechtere Ergebnisse zu erzielen). Verwenden Sie als Ausgangspunkt die Standardwerte und experimentieren Sie dann mit verschiedenen Einstellungen."}}
+
+        # initialize plugin directory
+        self.plugin_dir = os.path.dirname(__file__)
+        # initialize locale
+        self.locale = QSettings().value('locale/userLocale')[0:2]
+        # locale_path = os.path.join(
+        #    self.plugin_dir,
+        #    'i18n',
+        #    'pspip_{}.qm'.format(locale))
+
+        self.lang = "de" if self.locale == "de" else "en"
+
+        #if os.path.exists(locale_path):
+        #    self.translator = QTranslator()
+        #    self.translator.load(locale_path)
+
+        #    if qVersion() > '4.3.3':
+        #        QCoreApplication.installTranslator(self.translator)
+
+        #  Until then, use the subsequent "hack"...
     def initAlgorithm(self, config):
         """
         Here we define the inputs and output of the algorithm, along
         with some other properties.
         """
 
-        # initialize plugin directory
-        self.plugin_dir = os.path.dirname(__file__)
-        # initialize locale
-        locale = QSettings().value('locale/userLocale')[0:2]
-        locale_path = os.path.join(
-            self.plugin_dir,
-            'i18n',
-            'pspip_{}.qm'.format(locale))
 
-        if os.path.exists(locale_path):
-            self.translator = QTranslator()
-            self.translator.load(locale_path)
 
-            if qVersion() > '4.3.3':
-                QCoreApplication.installTranslator(self.translator)
 
+        
         # Add the input vector features source (limited to polygon layers).
         self.addParameter(
             QgsProcessingParameterFeatureSource(
                 self.INPUT,
-                self.tr('Input layer'),
+                self.tr(self.own_i18n["INPUT"][self.lang]),
                 [QgsProcessing.TypeVectorPolygon]
             )
         )
@@ -113,7 +135,7 @@ class PutSpacedPointsInPolygonsAlgorithm(QgsProcessingAlgorithm):
         self.addParameter(
             QgsProcessingParameterFeatureSink(
                 self.OUTPUT,
-                self.tr('Fitted_point_grids')
+                self.tr(self.own_i18n["OUTPUT"][self.lang])
             )
         )
 
@@ -121,7 +143,7 @@ class PutSpacedPointsInPolygonsAlgorithm(QgsProcessingAlgorithm):
         self.addParameter(
             QgsProcessingParameterDistance(
                 self.DISTANCE,
-                self.tr('Distance between points'),
+                self.tr(self.own_i18n["DISTANCE"][self.lang]),
                 500,
                 self.INPUT
                 )
@@ -131,7 +153,7 @@ class PutSpacedPointsInPolygonsAlgorithm(QgsProcessingAlgorithm):
         self.addParameter(
             QgsProcessingParameterNumber(
                 self.ITER_X,
-                description=self.tr('Number of iterations (x-direction)'),
+                description=self.tr(self.own_i18n["ITER_X"][self.lang]),
                 defaultValue=5,
                 type=QgsProcessingParameterNumber.Integer,
                 minValue=1,
@@ -143,7 +165,7 @@ class PutSpacedPointsInPolygonsAlgorithm(QgsProcessingAlgorithm):
         self.addParameter(
             QgsProcessingParameterNumber(
                 self.ITER_Y,
-                description=self.tr('Number of iterations (y-direction)'),
+                description=self.tr(self.own_i18n["ITER_Y"][self.lang]),
                 defaultValue=5,
                 type=QgsProcessingParameterNumber.Integer,
                 minValue=1,
@@ -155,7 +177,7 @@ class PutSpacedPointsInPolygonsAlgorithm(QgsProcessingAlgorithm):
         self.addParameter(
             QgsProcessingParameterNumber(
                 self.ITER_ROT,
-                description=self.tr('Number of iterations (rotation)'),
+                description=self.tr(self.own_i18n["ITER_ROT"][self.lang]),
                 defaultValue=5,
                 type=QgsProcessingParameterNumber.Integer,
                 minValue=1,
@@ -167,10 +189,10 @@ class PutSpacedPointsInPolygonsAlgorithm(QgsProcessingAlgorithm):
         self.addParameter(
             QgsProcessingParameterEnum(
                 self.GRID_SELECTION,
-                self.tr('Grid types to use'),
-                options=[self.tr('only triangle based grids'),
-                         self.tr('only square based grids'),
-                         self.tr('both triangle and square based grids')],
+                self.tr(self.own_i18n["GRID_MENU"][self.lang]),
+                options=[self.tr(self.own_i18n["GRID_IT_0"][self.lang]),
+                         self.tr(self.own_i18n["GRID_IT_1"][self.lang]),
+                         self.tr(self.own_i18n["GRID_IT_2"][self.lang])],
                 defaultValue=0,
                 optional=False)
         )
@@ -442,7 +464,7 @@ class PutSpacedPointsInPolygonsAlgorithm(QgsProcessingAlgorithm):
         Returns the translated algorithm name, which should be used for any
         user-visible display of the algorithm name.
         """
-        return self.tr("Put spaced points in polygons")
+        return self.tr(self.own_i18n["NAME"][self.lang])
     
     def shortHelpString(self):
         """
@@ -450,44 +472,7 @@ class PutSpacedPointsInPolygonsAlgorithm(QgsProcessingAlgorithm):
         should provide a basic description about what the algorithm does and the
         parameters and outputs associated with it..
         """
-        return self.tr('This algorithm takes a polygon layer and asks you to enter \
-a "Distance between points" value. Taking the distance constraint \
-into account, it attempts to find an arrangement of points within \
-each polygon that yields the highest possible number of points \
-(note the caveat in the following paragraph). The algorithm outputs \
-a multipoint layer containing one feature for each feature from the \
-input layer. Its attributes are an "FID" (int) field referring to \
-the input feature\'s fid and a "NUMPOINTS" (int) field stating the \
-number of points that were fitted. The multipoint geometry contains \
-an arrangement of points that yielded the highest number of points.\
-\n\n\
-Please bear in mind that this is an approximation algorithm that \
-is based on testing a large number of possible point arrangements. \
-This approach does not make it possible to find the very best \
-solution with certainty.\n\nThe basis for the testing process are \
-regular point grids. You can choose whether you would like the \
-algorithm to use square based grids, triangle based grids or both. \
-Please note that square based grids provide the optimum result only \
-in special cases (relatively small, rectangular input polygons).\
-\n\n\
-The algorithm takes the grids and varies them by moving them \
-step by step in the x-direction and y-direction and rotating them \
-(and all of them at the same time). You can specify how many \
-iterations you want to be performed for each of these factors. Here \
-is an example to help you understand this: If you have specified 500 \
-metres as the distance and 10 as the number of iterations (x-direction), \
-the grid is moved horizontally in steps of 50 metres. The range for \
-rotation iterations is between 0 and 90 (excluded) degrees for square \
-based grids and 0 to 120 (excluded) degrees for triangle based grids.\
-\n\n\
-Higher numbers of iterations do not necessarily lead to better \
-results (it is even possible to get worse results). As a starting \
-point, use the default values (5 iterations for each factor) and then \
-experiment with different settings. Too many iterations can bring the \
-computer to its limits and cause the plug-in (and QGIS itself) to \
-crash. 10 iterations each should be feasible, beyond that it may get \
-critical. If you run the plugin with a higher number of iterations, \
-please leave QGIS alone to minimise the risk of crashes.')
+        return self.tr(self.own_i18n["HELP"][self.lang])
 
     def group(self):
         """

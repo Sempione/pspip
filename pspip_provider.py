@@ -73,7 +73,7 @@ class PutSpacedPointsInPolygonsProvider(QgsProcessingProvider):
 
         This string should be short (e.g. "Lastools") and localised.
         """
-        return self.tr('User-created')
+        return self.tr('pspip')
 
     def icon(self):
         """
