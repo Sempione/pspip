@@ -202,6 +202,7 @@ class PutSpacedPointsInPolygonsAlgorithm(QgsProcessingAlgorithm):
         """
         # Retrieve the feature source.
         source = self.parameterAsSource(parameters, self.INPUT, context)
+        print(type(source))
 
         # Retrieve additional parameters.
         SPACING = self.parameterAsInt(parameters, self.DISTANCE, context)
