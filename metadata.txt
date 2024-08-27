@@ -6,13 +6,13 @@
 name=Put spaced points in polygons
 qgisMinimumVersion=3.0
 description=Attempts to find the highest possible number of points in polygons if a certain distance between the points is given. Outputs a multipoint layer.
-version=0.1
+version=1.0
 author=Christian Lesem
 email=christian@lesem.eu
 
-about=Provide a brief description of the plugin and its purpose.
+about=
 
-tracker=http://bugs
+tracker=https://github.com/Sempione/pspip/issues
 repository=https://github.com/Sempione/pspip
 # End of mandatory metadata
 
@@ -23,9 +23,9 @@ hasProcessingProvider=yes
 # changelog=
 
 # Tags are comma separated with spaces allowed
-tags=python
+tags=Python, Vector, Points, Analysis, Geometry
 
-homepage=http://homepage
+homepage=https://github.com/Sempione/pspip
 category=Analysis
 icon=icon.png
 # experimental flag
