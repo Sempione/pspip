@@ -34,7 +34,7 @@ from qgis import processing
 
 from qgis.PyQt.QtCore import (QCoreApplication,
                               QVariant,
-                              QSettings,)
+                              QSettings)
 
 from qgis.core import (QgsProcessing,
                        QgsFeatureSink,
@@ -202,7 +202,6 @@ class PutSpacedPointsInPolygonsAlgorithm(QgsProcessingAlgorithm):
         """
         # Retrieve the feature source.
         source = self.parameterAsSource(parameters, self.INPUT, context)
-        print(type(source))
 
         # Retrieve additional parameters.
         SPACING = self.parameterAsInt(parameters, self.DISTANCE, context)
