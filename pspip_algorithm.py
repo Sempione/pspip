@@ -223,7 +223,7 @@ class PutSpacedPointsInPolygonsAlgorithm(QgsProcessingAlgorithm):
         
         # Compute the number of steps to display within the progress bar.
         total = 100.0 / (source.featureCount() * X_ITERATIONS * Y_ITERATIONS * ROT_ITERATIONS) if source.featureCount() else 0
-        # If GRID_TYPE == 2, the number of computations is doubled because two base grids are used
+        # If GRID_TYPE == 2, the number of computations is doubled because two base grids are used.
         total = total / 2 if GRID_TYPE == 2 else total
         
         # Get source EPSG code.       
@@ -258,46 +258,40 @@ class PutSpacedPointsInPolygonsAlgorithm(QgsProcessingAlgorithm):
             pr = lyr_with_current_feature_only.dataProvider()
             pr.addFeatures([extracted_feature])
 
-            # Get the feature's bounding box (-> QgsRectangle object)
-            f_bb = feature.geometry().boundingBox()
+            # Get the feature's bounding box (-> QgsRectangle object).
+            bb1 = feature.geometry().boundingBox()
 
-            # Make the bounding box square-shaped by extending the narrow sides evenly.
-            bb_width = f_bb.width()
-            bb_height = f_bb.height()
+            # Create bb2 (calculate bounding box of bb1's circumcircle).
+            bb1_width = bb1.width()
+            bb1_height = bb1.height()
+            bb1_diagonal = sqrt(bb1_width ** 2 + bb1_height ** 2)
+            diff_left_and_right_each = (bb1_diagonal - bb1_width) / 2
+            diff_top_and_bottom_each = (bb1_diagonal - bb1_height) / 2
 
-            if (bb_width > bb_height):
-                diff_side = (bb_width - bb_height) / 2
-                f_bb.setYMinimum(f_bb.yMinimum() - diff_side)
-                f_bb.setYMaximum(f_bb.yMaximum() + diff_side)
-            elif (bb_width < bb_height):
-                diff_side = (bb_height - bb_width) / 2
-                f_bb.setXMinimum(f_bb.xMinimum() - diff_side)
-                f_bb.setXMaximum(f_bb.xMaximum() + diff_side)
+            bb2 = bb1
 
-            # The point grids will later be rotated around their centre.
-            # It must be ensured that they will still cover the entire area 
-            # of the feature in question. This is achieved by first creating 
-            # a circumcircle around the square bounding box and then creating 
-            # a bounding box for this circumcircle in turn. The following line 
-            # calculates how much needs to be added to each side of the original 
-            # bounding box in order to obtain the new bounding box.
-            account_for_virtual_circle = (f_bb.width() * sqrt(2) - f_bb.width())  / 2
+            bb2.setYMinimum(bb1.yMinimum() - diff_top_and_bottom_each)
+            bb2.setYMaximum(bb1.yMaximum() + diff_top_and_bottom_each)
+            bb2.setXMinimum(bb1.xMinimum() - diff_left_and_right_each)
+            bb2.setXMaximum(bb1.xMaximum() + diff_left_and_right_each)
+
+            del bb1
+
+            # Create bb3 (by enlarging it by "SPACING" in all directions).
+
+            bb3 = bb2
+
+            bb3.setYMinimum(bb2.yMinimum() - SPACING)
+            bb3.setYMaximum(bb2.yMaximum() + SPACING)
+            bb3.setXMinimum(bb2.xMinimum() - SPACING)
+            bb3.setXMaximum(bb2.xMaximum() + SPACING)
+
+            del bb2
             
-            # The bounding box must be further extended to take into account the
-            # fact that the point grids are also goingt to be shifted, at most 
-            # by the distance between the points (SPACING).
-
-            # Here, the coordinates of the bounding box are actually adapted 
-            # following the above considerations.
-            f_bb.set(f_bb.xMinimum() - account_for_virtual_circle - SPACING,
-                     f_bb.yMinimum() - account_for_virtual_circle - SPACING,
-                     f_bb.xMaximum() + account_for_virtual_circle + SPACING,
-                     f_bb.yMaximum() + account_for_virtual_circle + SPACING)
-
             # The centroid of the bounding box (-> a POINT object)
-            bb_centroid = f_bb.center()
+            bb_centroid = bb3.center()
 
-            bb_for_grid_creation = QgsReferencedRectangle(f_bb, crs_obj)
+            bb_for_grid_creation = QgsReferencedRectangle(bb3, crs_obj)
 
             # This list is going to contain at least one and at most two point grids.
             # To be exact: not grids directly, but a dictionary containing the grid and
