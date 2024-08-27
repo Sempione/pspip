@@ -301,7 +301,7 @@ class PutSpacedPointsInPolygonsAlgorithm(QgsProcessingAlgorithm):
             # Create a triangle based grid.
             if GRID_TYPE == 0 or GRID_TYPE == 2:
                 # There is no processing tool that can directly create triangle based point grids.
-                # Insted, one has to split the task up into two parts:
+                # Instead, one has to split up the task into two parts:
                 # First, create a hexagonal polygon grid...
                 polygon_lyr_triang = processing.run(
                     "native:creategrid", {
