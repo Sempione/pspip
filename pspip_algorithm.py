@@ -205,9 +205,9 @@ class PutSpacedPointsInPolygonsAlgorithm(QgsProcessingAlgorithm):
 
         # Retrieve additional parameters.
         SPACING = self.parameterAsInt(parameters, self.DISTANCE, context)
-        ROT_ITERATIONS = self.parameterAsInt(parameters, self.ITER_X, context)
-        X_ITERATIONS = self.parameterAsInt(parameters, self.ITER_Y, context)
-        Y_ITERATIONS = self.parameterAsInt(parameters, self.ITER_ROT, context)
+        ROT_ITERATIONS = self.parameterAsInt(parameters, self.ITER_ROT, context)
+        X_ITERATIONS = self.parameterAsInt(parameters, self.ITER_X, context)
+        Y_ITERATIONS = self.parameterAsInt(parameters, self.ITER_Y, context)
         GRID_TYPE = self.parameterAsInt(parameters, self.GRID_SELECTION, context)
         
         # Prepare fields that are to be added to the sink (the output layer).
